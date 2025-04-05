@@ -21,6 +21,8 @@ interface GameEntity {
     vertices?: Vec2D[]; // Add original vertices
     size?: number[];
     renderer?: React.ComponentType<any> | null; // Placeholder for renderer component
+    isThrusting?: boolean; // Add this for the lander entity
+    lateralDirection?: 'left' | 'right' | 'none'; // Add this
     [key: string]: any; // Allow other properties
 }
 

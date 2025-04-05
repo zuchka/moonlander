@@ -7,10 +7,12 @@ import Svg, { Polygon, Rect, G } from 'react-native-svg'; // Import Rect and G (
 interface LanderProps {
     body: Matter.Body;
     size: number[];
+    isThrusting?: boolean; // Added prop
+    lateralDirection?: 'left' | 'right' | 'none'; // Added prop
     testID?: string; // For the Svg container
 }
 
-const Lander: React.FC<LanderProps> = ({ body, size, testID }) => {
+const Lander: React.FC<LanderProps> = ({ body, size, isThrusting, lateralDirection, testID }) => {
     const width = size[0];
     const height = size[1];
     const { x: bodyX, y: bodyY } = body.position;
@@ -21,7 +23,6 @@ const Lander: React.FC<LanderProps> = ({ body, size, testID }) => {
     const topLeftY = bodyY - height / 2;
 
     // Define LM parts relative to the center (0, 0) of the lander's local coordinates
-    // Adjust these values to refine the shape
     const bodyWidth = width * 0.7;
     const bodyHeight = height * 0.5;
     const ascentStageHeight = height * 0.3;
@@ -31,6 +32,34 @@ const Lander: React.FC<LanderProps> = ({ body, size, testID }) => {
     const legTopAttach = bodyHeight * 0.3; // How far down the body legs attach
     const nozzleHeight = height * 0.15;
     const nozzleWidth = width * 0.2;
+    // Calculate nozzle bottom Y for flame attachment
+    const nozzleBottomY = (height + bodyHeight) / 2 + nozzleHeight;
+
+    // --- Main Flame Calculation (only if thrusting) ---
+    let flamePoints = '';
+    if (isThrusting) {
+        const baseFlameLength = height * 0.4; // Base length of the flame
+        const flickerAmount = height * 0.15; // Max amount of flicker
+        const flameLength = baseFlameLength + (Math.random() * flickerAmount) - (flickerAmount / 2);
+        const flameWidth = nozzleWidth * 1.2; // Slightly wider than nozzle
+        flamePoints = `
+            ${width / 2 - nozzleWidth / 2},${nozzleBottomY}
+            ${width / 2 + nozzleWidth / 2},${nozzleBottomY}
+            ${width / 2 + flameWidth / 2},${nozzleBottomY + flameLength * 0.7}
+            ${width / 2},${nozzleBottomY + flameLength}
+            ${width / 2 - flameWidth / 2},${nozzleBottomY + flameLength * 0.7}
+        `;
+    }
+    // --- End Main Flame Calculation ---
+
+    // --- Lateral Thruster Constants ---
+    const puffBaseLength = width * 0.15;
+    const puffFlicker = width * 0.05;
+    const puffWidth = height * 0.1;
+    const bodySideXLeft = (width - bodyWidth) / 2;
+    const bodySideXRight = (width + bodyWidth) / 2;
+    const puffAttachY = (height / 2);
+    // --- End Lateral Thruster Constants ---
 
     return (
         <Svg
@@ -65,7 +94,7 @@ const Lander: React.FC<LanderProps> = ({ body, size, testID }) => {
                 />
                 {/* Nozzle - Below main body */}
                 <Polygon
-                    points={`${width / 2 - nozzleWidth / 2},${(height + bodyHeight) / 2} ${width / 2 + nozzleWidth / 2},${(height + bodyHeight) / 2} ${width / 2},${(height + bodyHeight) / 2 + nozzleHeight}`}
+                    points={`${width / 2 - nozzleWidth / 2},${(height + bodyHeight) / 2} ${width / 2 + nozzleWidth / 2},${(height + bodyHeight) / 2} ${width / 2},${nozzleBottomY}`}
                     fill="darkgrey"
                 />
                  {/* Landing Legs (example using polygons) */}
@@ -83,6 +112,55 @@ const Lander: React.FC<LanderProps> = ({ body, size, testID }) => {
                      stroke="darkgrey"
                      strokeWidth="1"
                  />
+
+                 {/* --- Render Main Flame --- */}
+                 {isThrusting && (
+                     <Polygon points={flamePoints} fill="orange" stroke="yellow" strokeWidth="1" />
+                 )}
+
+                 {/* --- Render Lateral Thrusters (Reversed & Calculation Moved) --- */}
+                 {/* Show LEFT puff when moving RIGHT */}
+                 {lateralDirection === 'right' && (() => {
+                     // Calculate points for the LEFT puff inside this block
+                     const puffLength = puffBaseLength + (Math.random() * puffFlicker);
+                     const leftPuffPoints = `
+                         ${bodySideXLeft},${puffAttachY - puffWidth / 2}
+                         ${bodySideXLeft},${puffAttachY + puffWidth / 2}
+                         ${bodySideXLeft - puffLength * 0.7},${puffAttachY + puffWidth * 0.3}
+                         ${bodySideXLeft - puffLength},${puffAttachY}
+                         ${bodySideXLeft - puffLength * 0.7},${puffAttachY - puffWidth * 0.3}
+                     `;
+                     return (
+                         <Polygon
+                             points={leftPuffPoints}
+                             fill="lightblue"
+                             stroke="white"
+                             strokeWidth="1"
+                         />
+                     );
+                 })()}
+
+                 {/* Show RIGHT puff when moving LEFT */}
+                 {lateralDirection === 'left' && (() => {
+                     // Calculate points for the RIGHT puff inside this block
+                     const puffLength = puffBaseLength + (Math.random() * puffFlicker);
+                     const rightPuffPoints = `
+                         ${bodySideXRight},${puffAttachY - puffWidth / 2}
+                         ${bodySideXRight},${puffAttachY + puffWidth / 2}
+                         ${bodySideXRight + puffLength * 0.7},${puffAttachY + puffWidth * 0.3}
+                         ${bodySideXRight + puffLength},${puffAttachY}
+                         ${bodySideXRight + puffLength * 0.7},${puffAttachY - puffWidth * 0.3}
+                     `;
+                     return (
+                         <Polygon
+                             points={rightPuffPoints}
+                             fill="lightblue"
+                             stroke="white"
+                             strokeWidth="1"
+                         />
+                     );
+                 })()}
+                 {/* --- End Lateral Thrusters --- */}
             </G>
         </Svg>
     );

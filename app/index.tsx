@@ -235,9 +235,17 @@ export default function GameScreen() {
 
     // --- Prepare Entities for Current Frame ---
     const currentFrameEntities = entities ? { ...entities } : null;
-    if (currentFrameEntities && currentFrameEntities.gameState?.inputState) {
-        currentFrameEntities.gameState.inputState.thrusting = isThrusting;
-        currentFrameEntities.gameState.inputState.lateral = lateralInput;
+    if (currentFrameEntities) {
+        // Update input state for ControlSystem
+        if (currentFrameEntities.gameState?.inputState) {
+            currentFrameEntities.gameState.inputState.thrusting = isThrusting;
+            currentFrameEntities.gameState.inputState.lateral = lateralInput;
+        }
+        // Update lander entity for Renderer
+        if (currentFrameEntities.lander) {
+            currentFrameEntities.lander.isThrusting = isThrusting;
+            currentFrameEntities.lander.lateralDirection = lateralInput;
+        }
     }
 
     // Reverted loading state handling
