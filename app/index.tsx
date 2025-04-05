@@ -3,6 +3,9 @@ import { StyleSheet, View, Text, Dimensions, AppState, Platform } from 'react-na
 import Matter from 'matter-js';
 import { GameEngine } from 'react-native-game-engine';
 
+// Import the level config
+import { level1Config } from '@/src/levels/level_1';
+
 // Physics Setup (Step 2)
 import {
     initializePhysics,
@@ -35,9 +38,7 @@ interface BasicEntities { [key: string]: any; }
 const GAME_CONSTANTS = {
     LANDER_WIDTH: 40,
     LANDER_HEIGHT: 40,
-    PAD_WIDTH: 80,
     PAD_HEIGHT: 10,
-    INITIAL_FUEL: 100,
 };
 
 export default function GameScreen() {
@@ -52,7 +53,7 @@ export default function GameScreen() {
 
     // State for UI Data
     const [uiData, setUiData] = useState({
-        fuel: GAME_CONSTANTS.INITIAL_FUEL,
+        fuel: level1Config.lander.initialFuel,
         altitude: 0,
         hVel: 0,
         vVel: 0,
@@ -65,7 +66,10 @@ export default function GameScreen() {
 
     // --- Game Setup/Restart Logic ---
     const setupGame = useCallback(() => {
-        console.log('Setting up / Restarting game...');
+        console.log('Setting up / Restarting game using Level 1 config...');
+
+        // Load the current level config (hardcoded for now)
+        const levelConfig = level1Config;
 
         // Always initialize a fresh physics instance.
         const physics = initializePhysics();
@@ -74,15 +78,13 @@ export default function GameScreen() {
 
         // 1. (Physics already initialized above)
 
-        // Pre-calculate dimensions and landing pad info
+        // Pre-calculate dimensions and landing pad info using level config
         const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-        const landingPadWidth = GAME_CONSTANTS.PAD_WIDTH;
+        const landingPadWidth = levelConfig.landingPad.width;
 
-        // --- Randomize Landing Pad Position --- START
-        const minPadX = landingPadWidth; // Keep some margin from left edge
-        const maxPadX = screenWidth - landingPadWidth; // Keep some margin from right edge
-        const landingPadX = Math.floor(Math.random() * (maxPadX - minPadX + 1)) + minPadX;
-        // --- Randomize Landing Pad Position --- END
+        // --- Calculate Landing Pad Position using config --- START
+        const landingPadX = screenWidth * levelConfig.landingPad.xPositionFactor;
+        // --- Calculate Landing Pad Position using config --- END
 
         // Y position calculation needs landingPadHeight (use constant)
         const landingPadY = screenHeight - 50 - (GAME_CONSTANTS.PAD_HEIGHT / 2); // Position relative to bottom margin
@@ -98,7 +100,7 @@ export default function GameScreen() {
         );
         const landerBody = createLanderBody();
         const terrainBodies = createTerrainBodies(originalTerrainVertices);
-        const landingPadBody = createLandingPadBody(landingPadX, landingPadY);
+        const landingPadBody = createLandingPadBody(landingPadX, landingPadY, landingPadWidth);
 
         // 3. Add Bodies to the new World
         Matter.World.add(world, [
@@ -107,7 +109,7 @@ export default function GameScreen() {
             landingPadBody,
         ]);
 
-        // 4. Create Initial Entities (using the new engine/world)
+        // 4. Create Initial Entities (using the new engine/world and level config)
         const initialEntities = createInitialEntities(
             engine, // Pass the new engine
             world,  // Pass the new world
@@ -115,18 +117,18 @@ export default function GameScreen() {
             terrainBodies,
             originalTerrainVertices,
             landingPadBody,
-            GAME_CONSTANTS
+            levelConfig // Pass the level config instead of GAME_CONSTANTS
         );
         setEntities(initialEntities);
-        console.log('New entities created with fresh physics world.');
+        console.log('New entities created with fresh physics world and level config.');
 
         // Reset Input State on setup/restart
         setIsThrusting(false);
         setLateralInput('none');
 
-        // Reset UI State & Running State
+        // Reset UI State & Running State using level config
         setUiData({
-            fuel: GAME_CONSTANTS.INITIAL_FUEL,
+            fuel: levelConfig.lander.initialFuel,
             altitude: 0,
             hVel: 0,
             vVel: 0,

@@ -5,6 +5,18 @@ import LandingPad from '@/src/renderers/LandingPad';
 import { Vec2D } from '@/src/physics/setup';
 import { Dimensions } from 'react-native';
 
+// Define the new Level Configuration structure
+interface LevelConfig {
+    landingPad: {
+        width: number;
+        xPositionFactor: number;
+    };
+    lander: {
+        initialFuel: number;
+    };
+    terrain: {}; // Keep simple for now
+}
+
 // Define the structure for the constants needed
 interface GameConstants {
     LANDER_WIDTH: number;
@@ -60,7 +72,7 @@ interface Entities {
  * @param terrainBodies An array of pre-created Matter.js bodies for the terrain segments.
  * @param terrainVertices The original vertex data for each terrain segment.
  * @param landingPadBody The pre-created Matter.js body for the landing pad.
- * @param constants An object containing game constants like dimensions and initial fuel.
+ * @param levelConfig The configuration object for the current level.
  * @returns The initial entities object for react-native-game-engine.
  */
 const createInitialEntities = (
@@ -70,32 +82,37 @@ const createInitialEntities = (
     terrainBodies: Matter.Body[],
     terrainVertices: Vec2D[][],
     landingPadBody: Matter.Body,
-    constants: GameConstants
+    levelConfig: LevelConfig // Use the new LevelConfig type
 ): Entities => {
     const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+    // Hardcode constants not yet in level config
+    const LANDER_WIDTH = 40;
+    const LANDER_HEIGHT = 40;
+    const PAD_HEIGHT = 10;
 
     const initialEntities: Partial<Entities> = {
         physics: { engine, world },
         lander: {
             body: landerBody,
-            size: [constants.LANDER_WIDTH, constants.LANDER_HEIGHT],
-            renderer: Lander, // Assign Lander component
+            size: [LANDER_WIDTH, LANDER_HEIGHT], // Use hardcoded const
+            renderer: Lander,
         },
         landingPad: {
             body: landingPadBody,
-            size: [constants.PAD_WIDTH, constants.PAD_HEIGHT],
-            renderer: LandingPad, // Assign LandingPad component
+            size: [levelConfig.landingPad.width, PAD_HEIGHT], // Use levelConfig width, hardcoded height
+            renderer: LandingPad,
         },
         gameState: {
             engine: engine,
             world: world,
             status: 'playing',
-            fuel: constants.INITIAL_FUEL,
-            inputState: { // Initialize input state
+            fuel: levelConfig.lander.initialFuel, // Use fuel from levelConfig
+            inputState: {
                 thrusting: false,
-                lateral: 'none', // Use new field name
+                lateral: 'none',
             },
-            camera: { x: screenWidth / 2, y: screenHeight / 2 }, // Initial camera centered
+            camera: { x: screenWidth / 2, y: screenHeight / 2 },
         },
     };
 
@@ -121,4 +138,4 @@ const createInitialEntities = (
     return entities;
 };
 
-export { createInitialEntities, Entities, GameState, InputState }; // Keep this export for function and types 
+export { createInitialEntities, Entities, GameState, InputState, LevelConfig }; 

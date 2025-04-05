@@ -90,23 +90,25 @@ const LANDING_PAD_WIDTH = 80;
 const LANDING_PAD_HEIGHT = 10;
 
 /**
- * Creates the static physics body for the landing pad.
- * @param {number} x - The center X coordinate for the landing pad.
- * @param {number} y - The center Y coordinate for the landing pad.
- * @param {IBodyDefinition} [options={}] - Optional Matter.js body options.
- * @returns {Matter.Body} The landing pad physics body.
+ * Creates the landing pad physics body.
+ * @param {number} x - Center X position.
+ * @param {number} y - Center Y position.
+ * @param {number} width - Width of the pad.
+ * @param {IBodyDefinition} [options] - Optional Matter.js body options.
+ * @returns {Matter.Body}
  */
-export const createLandingPadBody = (x: number, y: number, options: IBodyDefinition = {}) => {
-    // Use provided x, y for the center position
+export const createLandingPadBody = (x: number, y: number, width: number, options: IBodyDefinition = {}) => {
+    // Use the constant for height for now
+    const height = 10; // Assuming PAD_HEIGHT is 10, ideally get from config/constants
+
     return Matter.Bodies.rectangle(
         x,
         y,
-        LANDING_PAD_WIDTH,
-        LANDING_PAD_HEIGHT,
+        width, // Use the passed width
+        height, // Use the height
         {
-            label: 'landing-pad',
+            label: 'landingPad',
             isStatic: true,
-            isSensor: false, // Ensure it's solid
             friction: 0.8, // Give it some friction
             ...options,
         }
