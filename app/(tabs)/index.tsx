@@ -147,17 +147,21 @@ export default function GameScreen() {
         };
     }, [setupGame]); // Rerun if setupGame function identity changes (it shouldn't)
 
-    // --- Event Handler for UI Updates ---
-    const handleEvent = useCallback((e: any) => {
-        if (e.type === 'ui-update') {
-            setUiData(e.payload);
+    // --- Event Handling from Game Engine ---
+    const handleEvent = useCallback((event: any) => {
+        if (event.type === 'ui-update') {
+            const newStatus = event.payload.status;
+            // Only log the status change when it transitions from playing
+            if (uiData.status === 'playing' && (newStatus === 'landed' || newStatus.startsWith('crashed'))) {
+                console.log(`Game ended with status: ${newStatus}`);
+            }
+            setUiData(event.payload);
+            // If the game has ended, stop the engine
+            if (newStatus !== 'playing') {
+                setRunning(false);
+            }
         }
-        // Optionally handle game over state change here too to stop engine
-        if (e.payload?.status && e.payload.status !== 'playing'){
-             console.log('Game ended with status:', e.payload.status);
-             // setRunning(false); // Optionally stop engine immediately
-        }
-    }, []);
+    }, [uiData.status]); // Depend on uiData.status to get the latest value
 
     // --- Action Handlers for UI Controls (Now update state) ---
     const handleStartThrust = useCallback(() => setIsThrusting(true), []);
@@ -194,9 +198,9 @@ export default function GameScreen() {
                 ref={gameEngineRef}
                 style={styles.gameContainer}
                 systems={systems} // Ensure InputSystem is NOT in here
-                entities={currentFrameEntities} // Pass the modified entities
+                entities={currentFrameEntities} // Pass potentially updated entities
                 running={running}
-                onEvent={handleEvent}
+                onEvent={handleEvent} // Use the memoized handler
             >
                 {/* Status Bar */}
             </GameEngine>

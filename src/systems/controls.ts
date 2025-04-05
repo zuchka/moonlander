@@ -32,14 +32,8 @@ const ControlSystem = (entities: any) => {
             y: -THRUST_FORCE_MAGNITUDE * Math.cos(angleRad) // Negative Y is up
         };
 
-        // Call instance method if available
-        if (typeof lander.body.applyForce === 'function') {
-            lander.body.applyForce(lander.body.position, force);
-        } else {
-            // Fallback or warning if method doesn't exist on mock/real body
-            console.warn('applyForce method not found on lander body');
-            // Matter.Body.applyForce(lander.body, lander.body.position, force); // Keep static as last resort?
-        }
+        // Use the static Matter.Body.applyForce method
+        Matter.Body.applyForce(lander.body, lander.body.position, force);
 
         // Consume fuel
         gameState.fuel -= FUEL_CONSUMPTION_RATE;
@@ -51,15 +45,15 @@ const ControlSystem = (entities: any) => {
     // Apply Rotation based on state
     const rotateDirection = rotation === 'left' ? -1 : rotation === 'right' ? 1 : 0;
     if (rotateDirection !== 0) {
-        const currentVelocity = lander.body.angularVelocity;
-        const targetVelocity = currentVelocity + (rotateDirection * ROTATION_TORQUE);
-        // Call instance method if available
-        if (typeof lander.body.setAngularVelocity === 'function') {
-            lander.body.setAngularVelocity(targetVelocity);
-        } else {
-            console.warn('setAngularVelocity method not found on lander body');
-            // Matter.Body.setAngularVelocity(lander.body, targetVelocity); // Keep static as last resort?
-        }
+        // Apply torque directly to the body instance
+        const desiredTorque = rotateDirection * ROTATION_TORQUE;
+        lander.body.torque = desiredTorque;
+
+        // Note: Matter.js automatically resets torque each step, so we apply it every frame input is active.
+        // No need for explicit damping here usually, unless torque is very high or you want a specific feel.
+    } else {
+        // Optional: Reset torque if no rotation input to prevent residual spin
+        // lander.body.torque = 0;
     }
 
     return entities;
