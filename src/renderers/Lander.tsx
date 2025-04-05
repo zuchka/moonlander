@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Matter from 'matter-js';
-import Svg, { Polygon, Rect, G } from 'react-native-svg'; // Import Rect and G (Group)
+import Svg, { Polygon, Rect, G, Circle, Line, Defs, LinearGradient, Stop } from 'react-native-svg'; // Ensure all needed elements are imported
 
 // Define props including the testIDs from the test file
 interface LanderProps {
@@ -16,9 +16,9 @@ const Lander: React.FC<LanderProps> = ({ body, size, isThrusting, lateralDirecti
     const width = size[0];
     const height = size[1];
     const { x: bodyX, y: bodyY } = body.position;
-    const angle = body.angle; // Get angle for rotation
+    const angle = body.angle; // Angle in radians
 
-    // Calculate top-left position for the container Svg
+    // Calculate top-left position for the Svg container
     const topLeftX = bodyX - width / 2;
     const topLeftY = bodyY - height / 2;
 
@@ -29,10 +29,9 @@ const Lander: React.FC<LanderProps> = ({ body, size, isThrusting, lateralDirecti
     const ascentStageWidth = width * 0.4;
     const legSpread = width * 0.45;
     const legHeight = height * 0.4;
-    const legTopAttach = bodyHeight * 0.3; // How far down the body legs attach
+    const legTopAttach = bodyHeight * 0.3;
     const nozzleHeight = height * 0.15;
     const nozzleWidth = width * 0.2;
-    // Calculate nozzle bottom Y for flame attachment
     const nozzleBottomY = (height + bodyHeight) / 2 + nozzleHeight;
 
     // --- Main Flame Calculation (only if thrusting) ---
@@ -61,7 +60,25 @@ const Lander: React.FC<LanderProps> = ({ body, size, isThrusting, lateralDirecti
     const puffAttachY = (height / 2);
     // --- End Lateral Thruster Constants ---
 
+    // --- Calculate positions for new details --- START
+    const ascentStageX = (width - ascentStageWidth) / 2;
+    const ascentStageY = (height - bodyHeight) / 2 - ascentStageHeight;
+    const windowSize = ascentStageWidth * 0.3;
+    const windowX = ascentStageX + ascentStageWidth * 0.6;
+    const windowY = ascentStageY + ascentStageHeight * 0.2;
+    const rcsSize = ascentStageWidth * 0.15;
+    const rcsPositions = [
+        { x: ascentStageX, y: ascentStageY }, // Top-Left
+        { x: ascentStageX + ascentStageWidth - rcsSize, y: ascentStageY }, // Top-Right
+    ];
+    // --- Calculate positions for new details --- END
+
+    // Define gradient IDs
+    const goldGradientId = "landerGoldGradient";
+    const silverGradientId = "landerSilverGradient";
+
     return (
+        // Single Svg container, positioned absolutely
         <Svg
             testID={testID}
             width={width}
@@ -74,93 +91,81 @@ const Lander: React.FC<LanderProps> = ({ body, size, isThrusting, lateralDirecti
                 }
             ]}
         >
+            {/* Define Gradients */}
+            <Defs>
+                <LinearGradient id={goldGradientId} x1="0%" y1="0%" x2="0%" y2="100%"><Stop offset="0%" stopColor="#FFDF00" /><Stop offset="100%" stopColor="#B8860B" /></LinearGradient>
+                <LinearGradient id={silverGradientId} x1="0%" y1="0%" x2="0%" y2="100%"><Stop offset="0%" stopColor="#E8E8E8" /><Stop offset="100%" stopColor="#A8A8A8" /></LinearGradient>
+            </Defs>
+
             {/* Group all parts and apply rotation */}
             <G rotation={angle * (180 / Math.PI)} origin={`${width / 2}, ${height / 2}`}>
-                {/* Main Body (Descent Stage) - Centered */}
-                <Rect
-                    x={(width - bodyWidth) / 2}
-                    y={(height - bodyHeight) / 2}
-                    width={bodyWidth}
-                    height={bodyHeight}
-                    fill="gold" // Or silver/grey
-                />
-                {/* Ascent Stage - On top of main body */}
-                <Rect
-                    x={(width - ascentStageWidth) / 2}
-                    y={(height - bodyHeight) / 2 - ascentStageHeight}
-                    width={ascentStageWidth}
-                    height={ascentStageHeight}
-                    fill="silver"
-                />
-                {/* Nozzle - Below main body */}
-                <Polygon
-                    points={`${width / 2 - nozzleWidth / 2},${(height + bodyHeight) / 2} ${width / 2 + nozzleWidth / 2},${(height + bodyHeight) / 2} ${width / 2},${nozzleBottomY}`}
-                    fill="darkgrey"
-                />
-                 {/* Landing Legs (example using polygons) */}
-                 {/* Leg 1 (Left) */}
-                 <Polygon
-                     points={`${width / 2 - bodyWidth / 2},${(height - bodyHeight) / 2 + legTopAttach} ${width / 2 - legSpread},${height} ${width / 2 - legSpread + 5},${height}`}
-                     fill="grey"
-                     stroke="darkgrey"
-                     strokeWidth="1"
-                 />
-                 {/* Leg 2 (Right) */}
-                 <Polygon
-                     points={`${width / 2 + bodyWidth / 2},${(height - bodyHeight) / 2 + legTopAttach} ${width / 2 + legSpread},${height} ${width / 2 + legSpread - 5},${height}`}
-                     fill="grey"
-                     stroke="darkgrey"
-                     strokeWidth="1"
-                 />
+                {/* Base Lander Shapes with Gradients */}
+                <Rect x={(width - bodyWidth) / 2} y={(height - bodyHeight) / 2} width={bodyWidth} height={bodyHeight} fill={`url(#${goldGradientId})`} />
+                <Rect x={ascentStageX} y={ascentStageY} width={ascentStageWidth} height={ascentStageHeight} fill={`url(#${silverGradientId})`} />
+                <Polygon points={`${width / 2 - nozzleWidth / 2},${(height + bodyHeight) / 2} ${width / 2 + nozzleWidth / 2},${(height + bodyHeight) / 2} ${width / 2},${nozzleBottomY}`} fill="darkgrey" />
+                <Polygon points={`${width / 2 - bodyWidth / 2},${(height - bodyHeight) / 2 + legTopAttach} ${width / 2 - legSpread},${height} ${width / 2 - legSpread + 5},${height}`} fill="grey" stroke="darkgrey" strokeWidth="1" />
+                <Polygon points={`${width / 2 + bodyWidth / 2},${(height - bodyHeight) / 2 + legTopAttach} ${width / 2 + legSpread},${height} ${width / 2 + legSpread - 5},${height}`} fill="grey" stroke="darkgrey" strokeWidth="1" />
 
-                 {/* --- Render Main Flame --- */}
-                 {isThrusting && (
-                     <Polygon points={flamePoints} fill="orange" stroke="yellow" strokeWidth="1" />
-                 )}
+                {/* --- Render Main Flame --- */}
+                {isThrusting && (
+                    <Polygon points={flamePoints} fill="orange" stroke="yellow" strokeWidth="1" />
+                )}
 
-                 {/* --- Render Lateral Thrusters (Reversed & Calculation Moved) --- */}
-                 {/* Show LEFT puff when moving RIGHT */}
-                 {lateralDirection === 'right' && (() => {
-                     // Calculate points for the LEFT puff inside this block
-                     const puffLength = puffBaseLength + (Math.random() * puffFlicker);
-                     const leftPuffPoints = `
-                         ${bodySideXLeft},${puffAttachY - puffWidth / 2}
-                         ${bodySideXLeft},${puffAttachY + puffWidth / 2}
-                         ${bodySideXLeft - puffLength * 0.7},${puffAttachY + puffWidth * 0.3}
-                         ${bodySideXLeft - puffLength},${puffAttachY}
-                         ${bodySideXLeft - puffLength * 0.7},${puffAttachY - puffWidth * 0.3}
-                     `;
-                     return (
-                         <Polygon
-                             points={leftPuffPoints}
-                             fill="lightblue"
-                             stroke="white"
-                             strokeWidth="1"
-                         />
-                     );
-                 })()}
+                {/* --- Render Lateral Thrusters (Reversed & Calculation Moved) --- */}
+                {/* Show LEFT puff when moving RIGHT */}
+                {lateralDirection === 'right' && (() => {
+                    // Calculate points for the LEFT puff inside this block
+                    const puffLength = puffBaseLength + (Math.random() * puffFlicker);
+                    const leftPuffPoints = `
+                        ${bodySideXLeft},${puffAttachY - puffWidth / 2}
+                        ${bodySideXLeft},${puffAttachY + puffWidth / 2}
+                        ${bodySideXLeft - puffLength * 0.7},${puffAttachY + puffWidth * 0.3}
+                        ${bodySideXLeft - puffLength},${puffAttachY}
+                        ${bodySideXLeft - puffLength * 0.7},${puffAttachY - puffWidth * 0.3}
+                    `;
+                    return (
+                        <Polygon
+                            points={leftPuffPoints}
+                            fill="lightblue"
+                            stroke="white"
+                            strokeWidth="1"
+                        />
+                    );
+                })()}
 
-                 {/* Show RIGHT puff when moving LEFT */}
-                 {lateralDirection === 'left' && (() => {
-                     // Calculate points for the RIGHT puff inside this block
-                     const puffLength = puffBaseLength + (Math.random() * puffFlicker);
-                     const rightPuffPoints = `
-                         ${bodySideXRight},${puffAttachY - puffWidth / 2}
-                         ${bodySideXRight},${puffAttachY + puffWidth / 2}
-                         ${bodySideXRight + puffLength * 0.7},${puffAttachY + puffWidth * 0.3}
-                         ${bodySideXRight + puffLength},${puffAttachY}
-                         ${bodySideXRight + puffLength * 0.7},${puffAttachY - puffWidth * 0.3}
-                     `;
-                     return (
-                         <Polygon
-                             points={rightPuffPoints}
-                             fill="lightblue"
-                             stroke="white"
-                             strokeWidth="1"
-                         />
-                     );
-                 })()}
-                 {/* --- End Lateral Thrusters --- */}
+                {/* Show RIGHT puff when moving LEFT */}
+                {lateralDirection === 'left' && (() => {
+                    // Calculate points for the RIGHT puff inside this block
+                    const puffLength = puffBaseLength + (Math.random() * puffFlicker);
+                    const rightPuffPoints = `
+                        ${bodySideXRight},${puffAttachY - puffWidth / 2}
+                        ${bodySideXRight},${puffAttachY + puffWidth / 2}
+                        ${bodySideXRight + puffLength * 0.7},${puffAttachY + puffWidth * 0.3}
+                        ${bodySideXRight + puffLength},${puffAttachY}
+                        ${bodySideXRight + puffLength * 0.7},${puffAttachY - puffWidth * 0.3}
+                    `;
+                    return (
+                        <Polygon
+                            points={rightPuffPoints}
+                            fill="lightblue"
+                            stroke="white"
+                            strokeWidth="1"
+                        />
+                    );
+                })()}
+                {/* --- End Lateral Thrusters --- */}
+
+                {/* --- Added Details --- */}
+                {/* Window */}
+                <Rect x={windowX} y={windowY} width={windowSize} height={windowSize} fill="#222244" />
+                {/* Antenna Removed */}
+                {/* <Circle cx={dishCenterX} cy={dishCenterY} r={dishRadius} fill="white" /> */}
+                {/* <Line x1={dishCenterX + dishRadius * 0.7} y1={dishCenterY} x2={width/2 - bodyWidth/2} y2={dishCenterY - bodyHeight * 0.1} stroke="white" strokeWidth="1" /> */}
+                {/* RCS Thrusters */}
+                {rcsPositions.map((pos, index) => (
+                    <Rect key={`rcs-${index}`} x={pos.x} y={pos.y} width={rcsSize} height={rcsSize} fill="#555555" />
+                ))}
+                {/* --- End Added Details --- */}
             </G>
         </Svg>
     );
