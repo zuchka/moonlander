@@ -61,13 +61,11 @@ const LanderIcon: React.FC<LanderIconProps> = ({ size }) => {
     const nozzleY = (height + bodyHeight) / 2;
 
     return (
-        <Svg width={width} height={height * 1.1} viewBox={`0 0 ${width} ${height * 1.1}`}> // Slightly taller viewbox for nozzle
+        <Svg width={width} height={height * 1.1} viewBox={`0 0 ${width} ${height * 1.1}`}>
             <G>
-                {/* Basic Colors - No Gradients */}
-                <Rect x={(width - bodyWidth) / 2} y={bodyY} width={bodyWidth} height={bodyHeight} fill="#BDBDBD" /> {/* Grey */} 
-                <Rect x={ascentStageX} y={ascentStageY} width={ascentStageWidth} height={ascentStageHeight} fill="#E0E0E0" /> {/* Light Grey */} 
-                <Polygon points={`${width / 2 - nozzleWidth / 2},${nozzleY} ${width / 2 + nozzleWidth / 2},${nozzleY} ${width / 2},${nozzleY + nozzleHeight}`} fill="#616161" /> {/* Dark Grey */} 
-                {/* Legs */}
+                <Rect x={(width - bodyWidth) / 2} y={bodyY} width={bodyWidth} height={bodyHeight} fill="#BDBDBD" />
+                <Rect x={ascentStageX} y={ascentStageY} width={ascentStageWidth} height={ascentStageHeight} fill="#E0E0E0" />
+                <Polygon points={`${width / 2 - nozzleWidth / 2},${nozzleY} ${width / 2 + nozzleWidth / 2},${nozzleY} ${width / 2},${nozzleY + nozzleHeight}`} fill="#616161" />
                 <Polygon points={`${width / 2 - bodyWidth / 2},${legsY} ${width / 2 - legSpread},${height} ${width / 2 - legSpread + 5},${height}`} fill="#9E9E9E" />
                 <Polygon points={`${width / 2 + bodyWidth / 2},${legsY} ${width / 2 + legSpread},${height} ${width / 2 + legSpread - 5},${height}`} fill="#9E9E9E" />
             </G>
@@ -164,8 +162,8 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
 
             {/* Lives Display (Top Right) */}
             <View style={styles.livesContainer}>
-                {/* Render LanderIcon components based on lives count */}
-                {Array.from({ length: lives }).map((_, index) => (
+                {/* Render LanderIcon components based on lives count, with check */}
+                {typeof lives === 'number' && lives > 0 && Array.from({ length: lives }).map((_, index) => (
                     <LanderIcon key={index} size={18} />
                 ))}
             </View>
