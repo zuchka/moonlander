@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { StyleSheet, View, Text, Dimensions, AppState } from 'react-native';
 import Matter from 'matter-js';
 import { GameEngine } from 'react-native-game-engine';
@@ -19,6 +19,9 @@ import { createInitialEntities } from '@/src/entities';
 // Systems Setup (Step 3.B-2)
 import systems from '@/src/systems'; // The array of systems from src/systems/index.ts
 
+// UI Component
+import UIOverlay from '@/src/components/UIOverlay'; // Import the UI component
+
 // Define types for our refs/state - Ideally share these from entities/index.ts
 interface PhysicsHandles {
     engine: Matter.Engine;
@@ -37,27 +40,45 @@ const GAME_CONSTANTS = {
 };
 
 export default function GameScreen() {
-    const [running, setRunning] = useState(true); // Game loop state
+    const [running, setRunning] = useState(true);
     const [entities, setEntities] = useState<BasicEntities | null>(null);
+    const [gameKey, setGameKey] = useState(0);
     const gameEngineRef = useRef<GameEngine>(null);
 
-    // Use refs for physics objects to avoid recreating on re-renders
+    // Refs for physics objects
     const physicsRef = useRef<PhysicsHandles | null>(null);
-    const landerBodyRef = useRef<Matter.Body | null>(null);
-    const terrainBodiesRef = useRef<Matter.Body[]>([]);
-    const landingPadBodyRef = useRef<Matter.Body | null>(null);
+    // Note: We don't need refs for individual bodies here anymore if restart re-initializes everything
 
-    // --- Initialization Effect ---
-    useEffect(() => {
+    // State for UI Data
+    const [uiData, setUiData] = useState({
+        fuel: GAME_CONSTANTS.INITIAL_FUEL,
+        altitude: 0,
+        hVel: 0,
+        vVel: 0,
+        status: 'playing',
+    });
+
+    // State for Player Input Actions
+    const [isThrusting, setIsThrusting] = useState(false);
+    const [rotationInput, setRotationInput] = useState<'left' | 'right' | 'none'>('none');
+
+    // --- Game Setup/Restart Logic ---
+    const setupGame = useCallback(() => {
+        console.log('Setting up / Restarting game...');
+        // Clear previous engine if exists
+        if (physicsRef.current?.engine) {
+            Matter.Engine.clear(physicsRef.current.engine);
+        }
+
         // 1. Initialize Physics Engine and World
         const physics = initializePhysics();
         physicsRef.current = physics;
         const { engine, world } = physics;
 
-        // Pre-calculate dimensions and landing pad info needed for generation
+        // Pre-calculate dimensions and landing pad info
         const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-        const landingPadX = screenWidth / 2; // Consistent calculation
-        const landingPadWidth = GAME_CONSTANTS.PAD_WIDTH; // Use constant
+        const landingPadX = screenWidth / 2;
+        const landingPadWidth = GAME_CONSTANTS.PAD_WIDTH;
 
         // 2. Create Physics Bodies
         const originalTerrainVertices = generateTerrainVertices(
@@ -66,61 +87,87 @@ export default function GameScreen() {
             landingPadX,
             landingPadWidth
         );
-        landerBodyRef.current = createLanderBody({ /* options */ });
-        terrainBodiesRef.current = createTerrainBodies(originalTerrainVertices);
-        landingPadBodyRef.current = createLandingPadBody({ /* options */ });
+        const landerBody = createLanderBody(); // No need for ref if only used here
+        const terrainBodies = createTerrainBodies(originalTerrainVertices);
+        const landingPadBody = createLandingPadBody();
 
         // 3. Add Bodies to World
         Matter.World.add(world, [
-            landerBodyRef.current,
-            ...terrainBodiesRef.current,
-            landingPadBodyRef.current,
+            landerBody,
+            ...terrainBodies,
+            landingPadBody,
         ]);
 
-        // 4. Create Initial Entities for GameEngine
+        // 4. Create Initial Entities
         const initialEntities = createInitialEntities(
             engine,
             world,
-            landerBodyRef.current,
-            terrainBodiesRef.current,
+            landerBody,
+            terrainBodies,
             originalTerrainVertices,
-            landingPadBodyRef.current,
+            landingPadBody,
             GAME_CONSTANTS
         );
         setEntities(initialEntities);
+        console.log('New entities created:', Object.keys(initialEntities));
 
-        // --- App State Handling (Pause/Resume) ---
+        // Reset Input State on setup/restart
+        setIsThrusting(false);
+        setRotationInput('none');
+
+        // Reset UI State & Running State
+        setUiData({
+            fuel: GAME_CONSTANTS.INITIAL_FUEL,
+            altitude: 0,
+            hVel: 0,
+            vVel: 0,
+            status: 'playing',
+        });
+        setRunning(true);
+        setGameKey(prevKey => prevKey + 1);
+
+    }, []); // useCallback with empty dependency array
+
+    // --- Initial Setup Effect ---
+    useEffect(() => {
+        setupGame(); // Call setup on initial mount
+
+        // App State Handling (Pause/Resume)
         const handleAppStateChange = (nextAppState: any) => {
             setRunning(nextAppState === 'active');
         };
         const subscription = AppState.addEventListener('change', handleAppStateChange);
 
-        // --- Cleanup ---
         return () => {
             subscription.remove();
-            // Remove bodies from the world
-            if (world && landerBodyRef.current) {
-                Matter.World.remove(world, [
-                    landerBodyRef.current,
-                    ...terrainBodiesRef.current,
-                    landingPadBodyRef.current as Matter.Body, // Type assertion might be needed
-                ]);
-            }
-            // Clear the engine
-            if (engine) {
-                Matter.Engine.clear(engine);
-            }
-            // Clear refs
-            physicsRef.current = null;
-            landerBodyRef.current = null;
-            terrainBodiesRef.current = [];
-            landingPadBodyRef.current = null;
+            // Cleanup engine on unmount (already handled in setupGame on remount)
+             if (physicsRef.current?.engine) {
+                 Matter.Engine.clear(physicsRef.current.engine);
+             }
         };
-    }, []); // Run only once on mount
+    }, [setupGame]); // Rerun if setupGame function identity changes (it shouldn't)
 
-    // --- Render Game Engine ---
+    // --- Event Handler for UI Updates ---
+    const handleEvent = useCallback((e: any) => {
+        if (e.type === 'ui-update') {
+            setUiData(e.payload);
+        }
+        // Optionally handle game over state change here too to stop engine
+        if (e.payload?.status && e.payload.status !== 'playing'){
+             console.log('Game ended with status:', e.payload.status);
+             // setRunning(false); // Optionally stop engine immediately
+        }
+    }, []);
+
+    // --- Action Handlers for UI Controls (Now update state) ---
+    const handleStartThrust = useCallback(() => setIsThrusting(true), []);
+    const handleStopThrust = useCallback(() => setIsThrusting(false), []);
+    const handleStartRotateLeft = useCallback(() => setRotationInput('left'), []);
+    const handleStartRotateRight = useCallback(() => setRotationInput('right'), []);
+    const handleStopRotate = useCallback(() => setRotationInput('none'), []);
+
+    // --- Render Game Engine & UI ---
     if (!entities) {
-        // Show loading or placeholder while entities are initializing
         return (
             <View style={styles.container}>
                 <Text style={styles.loadingText}>Loading...</Text>
@@ -128,25 +175,48 @@ export default function GameScreen() {
         );
     }
 
+    // --- Create entities object for this render frame ---
+    // Start with the current entities state
+    const currentFrameEntities = { ...entities }; 
+    // Ensure gameState and inputState exist before modifying
+    if (currentFrameEntities.gameState && currentFrameEntities.gameState.inputState) {
+        // Update the inputState within the entities object for this frame
+        currentFrameEntities.gameState.inputState.thrusting = isThrusting;
+        currentFrameEntities.gameState.inputState.rotation = rotationInput;
+    }
+    // --- IMPORTANT: This direct mutation isn't ideal for state management paradigms
+    // but is a common pattern when bridging external state into react-native-game-engine.
+
     return (
         <View style={styles.container}>
             <GameEngine
+                key={gameKey}
                 ref={gameEngineRef}
                 style={styles.gameContainer}
-                systems={systems} // Pass the imported systems array
-                entities={entities} // Pass the initial entities
-                running={running} // Control the game loop
-                onEvent={(e: any) => {
-                    // Handle specific events dispatched by systems if needed at this level
-                    if (e.type === 'game-over' || e.type === 'landed' || e.type === 'crashed-terrain') {
-                         console.log('Game Event:', e.type);
-                         // setRunning(false); // Example: Stop game on game-over
-                    }
-                }}
+                systems={systems} // Ensure InputSystem is NOT in here
+                entities={currentFrameEntities} // Pass the modified entities
+                running={running}
+                onEvent={handleEvent}
             >
-                {/* Status Bar or other overlays can go here if needed outside the engine */}
+                {/* Status Bar */}
             </GameEngine>
-            {/* UI Controls (Buttons, etc.) will go here in Step 5 */}
+
+            {/* Render UI Overlay - pass action handlers */}
+            <UIOverlay
+                fuel={uiData.fuel}
+                altitude={uiData.altitude}
+                hVel={uiData.hVel}
+                vVel={uiData.vVel}
+                status={uiData.status}
+                isThrusting={isThrusting}
+                rotationDirection={rotationInput}
+                onStartThrust={handleStartThrust}
+                onStopThrust={handleStopThrust}
+                onStartRotateLeft={handleStartRotateLeft}
+                onStartRotateRight={handleStartRotateRight}
+                onStopRotate={handleStopRotate}
+                onRestart={setupGame}
+            />
         </View>
     );
 }

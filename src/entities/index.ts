@@ -23,12 +23,23 @@ interface GameEntity {
     [key: string]: any; // Allow other properties
 }
 
+// Define structure for gameState, including inputState
+interface GameState {
+    status: string;
+    fuel: number;
+    inputState: { // Add input state object
+        thrusting: boolean;
+        rotation: 'left' | 'right' | 'none';
+    };
+    [key: string]: any;
+}
+
 // Define the overall entities structure type
 interface Entities {
     physics: { engine: Matter.Engine; world: Matter.World };
     lander: GameEntity;
     landingPad: GameEntity;
-    gameState: { status: string; fuel: number; [key: string]: any };
+    gameState: GameState; // Use specific type
     [key: `terrain${number}`]: GameEntity; // For terrain parts
 }
 
@@ -69,6 +80,10 @@ export const createInitialEntities = (
         gameState: {
             status: 'playing',
             fuel: constants.INITIAL_FUEL,
+            inputState: { // Initialize input state
+                thrusting: false,
+                rotation: 'none',
+            }
         },
     };
 
