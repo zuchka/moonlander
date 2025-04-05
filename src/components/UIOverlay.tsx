@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import Svg, { Polygon, Rect, G } from 'react-native-svg'; // Import SVG components
 
 // Get screen dimensions for positioning
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -15,6 +16,9 @@ interface UIOverlayProps {
     crashSpeedLimit?: number;
     currentLevel: number;
     totalLevels: number;
+    // Add props for lives system
+    lives: number;
+    isFinalGameOver: boolean;
     // Optional props for button styling
     isThrusting?: boolean;
     lateralDirection?: 'left' | 'right' | 'none';
@@ -26,7 +30,51 @@ interface UIOverlayProps {
     onStopMove: () => void;
     onRestart: () => void;
     onNextLevel: () => void;
+    onNewGame: () => void; // Add callback for new game
 }
+
+// --- Reusable Lander Icon Component --- START
+interface LanderIconProps {
+    size: number;
+}
+
+const LanderIcon: React.FC<LanderIconProps> = ({ size }) => {
+    const width = size;
+    const height = size;
+
+    // Simplified relative dimensions from Lander.tsx
+    const bodyWidth = width * 0.7;
+    const bodyHeight = height * 0.5;
+    const ascentStageHeight = height * 0.3;
+    const ascentStageWidth = width * 0.4;
+    const legSpread = width * 0.45;
+    const legTopAttach = bodyHeight * 0.3;
+    const nozzleHeight = height * 0.15;
+    const nozzleWidth = width * 0.2;
+    const nozzleBottomY = (height + bodyHeight) / 2 + nozzleHeight;
+    const ascentStageX = (width - ascentStageWidth) / 2;
+    const ascentStageY = (height - bodyHeight) / 2 - ascentStageHeight;
+
+    // Simplified geometry - adjust Y offsets slightly for icon clarity if needed
+    const bodyY = (height - bodyHeight) / 2;
+    const legsY = bodyY + legTopAttach;
+    const nozzleY = (height + bodyHeight) / 2;
+
+    return (
+        <Svg width={width} height={height * 1.1} viewBox={`0 0 ${width} ${height * 1.1}`}> // Slightly taller viewbox for nozzle
+            <G>
+                {/* Basic Colors - No Gradients */}
+                <Rect x={(width - bodyWidth) / 2} y={bodyY} width={bodyWidth} height={bodyHeight} fill="#BDBDBD" /> {/* Grey */} 
+                <Rect x={ascentStageX} y={ascentStageY} width={ascentStageWidth} height={ascentStageHeight} fill="#E0E0E0" /> {/* Light Grey */} 
+                <Polygon points={`${width / 2 - nozzleWidth / 2},${nozzleY} ${width / 2 + nozzleWidth / 2},${nozzleY} ${width / 2},${nozzleY + nozzleHeight}`} fill="#616161" /> {/* Dark Grey */} 
+                {/* Legs */}
+                <Polygon points={`${width / 2 - bodyWidth / 2},${legsY} ${width / 2 - legSpread},${height} ${width / 2 - legSpread + 5},${height}`} fill="#9E9E9E" />
+                <Polygon points={`${width / 2 + bodyWidth / 2},${legsY} ${width / 2 + legSpread},${height} ${width / 2 + legSpread - 5},${height}`} fill="#9E9E9E" />
+            </G>
+        </Svg>
+    );
+};
+// --- Reusable Lander Icon Component --- END
 
 const UIOverlay: React.FC<UIOverlayProps> = ({
     fuel,
@@ -38,6 +86,9 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     crashSpeedLimit,
     currentLevel,
     totalLevels,
+    // Add new props
+    lives,
+    isFinalGameOver,
     isThrusting,
     lateralDirection,
     onStartThrust,
@@ -47,6 +98,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     onStopMove,
     onRestart,
     onNextLevel,
+    onNewGame, // Add callback
 }) => {
 
     // Format displayed values
@@ -83,8 +135,14 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
             break;
     }
 
-    const showNextLevelButton = status === 'landed' && currentLevel < totalLevels;
-    const showRestartButton = isGameOver && !showNextLevelButton;
+    // Override status message if it's the final game over
+    if (isFinalGameOver) {
+        statusMessage = 'Game Over!';
+    }
+
+    const showNextLevelButton = status === 'landed' && currentLevel < totalLevels && !isFinalGameOver;
+    const showRestartButton = isGameOver && !showNextLevelButton && !isFinalGameOver;
+    const showNewGameButton = isFinalGameOver;
     const restartButtonText = status === 'landed' ? 'Replay Level' : 'Retry?';
 
     // Determine button styles based on state
@@ -103,18 +161,31 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
                 <Text style={styles.infoText}>VVel: {formatNumber(vVel)}</Text>
             </View>
 
+            {/* Lives Display (Top Right) */}
+            <View style={styles.livesContainer}>
+                {/* Render LanderIcon components based on lives count */}
+                {Array.from({ length: lives }).map((_, index) => (
+                    <LanderIcon key={index} size={18} />
+                ))}
+            </View>
+
             {/* Game Status Display (Top Center) */}
             {isGameOver && (
                 <View style={styles.statusContainer}>
                     <Text style={styles.statusText}>{statusMessage}</Text>
                     {showNextLevelButton && (
-                        <TouchableOpacity onPress={onNextLevel} style={styles.restartButton}>
-                            <Text style={styles.restartText}>Next Level</Text>
+                        <TouchableOpacity onPress={onNextLevel} style={styles.actionButton}>
+                            <Text style={styles.actionText}>Next Level</Text>
                         </TouchableOpacity>
                     )}
                     {showRestartButton && (
-                        <TouchableOpacity onPress={onRestart} style={styles.restartButton}>
-                            <Text style={styles.restartText}>{restartButtonText}</Text>
+                        <TouchableOpacity onPress={onRestart} style={styles.actionButton}>
+                            <Text style={styles.actionText}>{restartButtonText}</Text>
+                        </TouchableOpacity>
+                    )}
+                    {showNewGameButton && (
+                        <TouchableOpacity onPress={onNewGame} style={styles.actionButton}>
+                            <Text style={styles.actionText}>New Game</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -167,6 +238,17 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 5,
     },
+    livesContainer: {
+        position: 'absolute',
+        top: 50, // Align with info container
+        right: 20,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        paddingVertical: 5, // Adjust padding
+        paddingHorizontal: 10,
+        borderRadius: 5,
+        flexDirection: 'row', // Arrange icons horizontally
+        alignItems: 'center',
+    },
     infoText: {
         color: 'white',
         fontSize: 14,
@@ -188,13 +270,14 @@ const styles = StyleSheet.create({
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 3,
     },
-    restartButton: {
+    actionButton: { // Renamed from restartButton for clarity
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
+        marginTop: 10, // Add margin between buttons if needed
     },
-    restartText: {
+    actionText: { // Renamed from restartText
         color: 'black',
         fontSize: 18,
         fontWeight: 'bold',

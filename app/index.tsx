@@ -49,6 +49,9 @@ export default function GameScreen() {
     const [gameKey, setGameKey] = useState(0);
     const [currentLevel, setCurrentLevel] = useState(1);
     const gameEngineRef = useRef<GameEngine>(null);
+    // Add state for lives and final game over
+    const [lives, setLives] = useState(3);
+    const [isFinalGameOver, setIsFinalGameOver] = useState(false);
 
     // Refs for physics objects
     const physicsRef = useRef<PhysicsHandles | null>(null);
@@ -230,10 +233,24 @@ export default function GameScreen() {
 
     // --- Restart Current Level Logic ---
     const handleRestart = useCallback(() => {
-        console.log(`Restarting Level ${currentLevel}...`);
-        // Trigger remount via key, setupGame will use the existing currentLevel
-        setGameKey(prevKey => prevKey + 1);
-    }, [currentLevel]);
+        // Only allow restart if not final game over
+        if (!isFinalGameOver) {
+            console.log(`Restarting Level ${currentLevel}...`);
+            // Trigger remount via key, setupGame will use the existing currentLevel
+            setGameKey(prevKey => prevKey + 1);
+        } else {
+            console.log('Cannot restart, final game over.');
+        }
+    }, [currentLevel, isFinalGameOver]); // Add isFinalGameOver dependency
+
+    // --- Start New Game Logic ---
+    const handleNewGame = useCallback(() => {
+        console.log('Starting New Game...');
+        setLives(3);              // Reset lives
+        setCurrentLevel(1);       // Reset to level 1
+        setIsFinalGameOver(false); // Clear final game over flag
+        setGameKey(prevKey => prevKey + 1); // Trigger remount/setup
+    }, []); // No dependencies needed
 
     // --- Initial Setup and Reset Effect (triggered by gameKey) ---
     useEffect(() => {
@@ -274,17 +291,32 @@ export default function GameScreen() {
     const handleEvent = useCallback((event: any) => {
         if (event.type === 'ui-update') {
             const newStatus = event.payload.status;
-            // Only log the status change when it transitions from playing
-            if (uiData.status === 'playing' && (newStatus === 'landed' || newStatus.startsWith('crashed'))) {
-                console.log(`Game ended with status: ${newStatus}`);
-            }
+            const previousStatus = uiData.status; // Capture status before update
+
+            // Update UI data first
             setUiData(event.payload);
-            // If the game has ended, stop the engine
-            if (newStatus !== 'playing') {
+
+            // Check for transition to a crash state
+            if (previousStatus === 'playing' && newStatus.startsWith('crashed')) {
+                console.log(`Crash detected with status: ${newStatus}. Lives left: ${lives}`);
+                if (lives > 0) {
+                    const newLives = lives - 1;
+                    setLives(newLives);
+                    console.log(`Lives decremented to: ${newLives}`);
+                    if (newLives === 0) {
+                        console.log('Final life lost. Setting final game over.');
+                        setIsFinalGameOver(true);
+                    }
+                }
+                // Stop the engine for any crash
+                setRunning(false);
+            } else if (newStatus === 'landed') {
+                // Stop the engine on successful landing
+                 console.log(`Landed detected. Status: ${newStatus}`);
                 setRunning(false);
             }
         }
-    }, [uiData.status]); // Depend on uiData.status to get the latest value
+    }, [uiData.status, lives]); // Add lives to dependency array
 
     // --- Action Handlers for UI Controls (Now update state) ---
     const handleStartThrust = useCallback(() => setIsThrusting(true), []);
@@ -393,9 +425,10 @@ export default function GameScreen() {
                 hVel={uiData.hVel}
                 vVel={uiData.vVel}
                 status={uiData.status}
-                // Pass crash speed details from state
                 crashSpeed={uiData.crashSpeed}
                 crashSpeedLimit={uiData.crashSpeedLimit}
+                lives={lives}
+                isFinalGameOver={isFinalGameOver}
                 isThrusting={isThrusting}
                 lateralDirection={lateralInput}
                 currentLevel={currentLevel}
@@ -407,6 +440,7 @@ export default function GameScreen() {
                 onStopMove={handleStopMove}
                 onRestart={handleRestart}
                 onNextLevel={handleNextLevel}
+                onNewGame={handleNewGame}
             />
         </View>
     );
