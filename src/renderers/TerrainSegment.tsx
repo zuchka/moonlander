@@ -34,8 +34,6 @@ const TerrainSegment: React.FC<TerrainSegmentProps> = ({ vertices, testID, polyg
                 testID={polygonTestID}
                 points={points}
                 fill="darkgrey"
-                stroke="grey"
-                strokeWidth="1"
             />
         </Svg>
     );
