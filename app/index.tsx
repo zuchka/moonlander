@@ -15,6 +15,7 @@ import {
     createLandingPadBody,
     generateTerrainVertices,
     Vec2D,
+    MAX_LANDING_ANGLE, // Import the constant
 } from '@/src/physics/setup';
 
 // Entities Setup (Step 3.B-1)
@@ -83,6 +84,65 @@ export default function GameScreen() {
         const physics = initializePhysics();
         physicsRef.current = physics;
         const { engine, world } = physics;
+
+        // Capture necessary config values for the event listener closure
+        const maxLandingSpeed = levelConfig.lander.maxLandingSpeed;
+
+        // --- Collision Event Handling ---
+        Matter.Events.on(engine, 'collisionStart', (event) => {
+            const pairs = event.pairs;
+            let didCollideWithPad = false;
+            let didCollideWithTerrain = false;
+            let landerBodyForCheck: Matter.Body | null = null;
+
+            // Step 1: Iterate through all pairs to identify collision types
+            for (let i = 0; i < pairs.length; i++) {
+                const pair = pairs[i];
+                let currentLanderBody: Matter.Body | null = null;
+                let otherBody: Matter.Body | null = null;
+
+                if (pair.bodyA.label === 'lander') {
+                    currentLanderBody = pair.bodyA;
+                    otherBody = pair.bodyB;
+                } else if (pair.bodyB.label === 'lander') {
+                    currentLanderBody = pair.bodyB;
+                    otherBody = pair.bodyA;
+                }
+
+                if (currentLanderBody && otherBody) {
+                    landerBodyForCheck = currentLanderBody; // Store ref to lander body
+                    if (otherBody.label === 'landingPad') {
+                        didCollideWithPad = true;
+                    } else if (otherBody.label === 'terrain') {
+                        didCollideWithTerrain = true;
+                    }
+                }
+
+                // Optimization: If we've found both types, no need to check further pairs
+                if (didCollideWithPad && didCollideWithTerrain) {
+                    break;
+                }
+            }
+
+            // Step 2: Prioritize and dispatch based on findings
+            if (didCollideWithPad && landerBodyForCheck) {
+                // Prioritize pad collision: Check landing conditions
+                const landedSafely = landerBodyForCheck.speed < maxLandingSpeed &&
+                                   Math.abs(landerBodyForCheck.angle) < MAX_LANDING_ANGLE;
+
+                if (landedSafely) {
+                    (gameEngineRef.current as any)?.dispatch({ type: 'collision', outcome: 'landed' });
+                } else {
+                    const reason = landerBodyForCheck.speed >= maxLandingSpeed ? 'speed' : 'angle';
+                    (gameEngineRef.current as any)?.dispatch({ type: 'collision', outcome: `crashed-pad-${reason}` });
+                }
+            } else if (didCollideWithTerrain) {
+                // Only dispatch terrain crash if NO pad collision occurred
+                (gameEngineRef.current as any)?.dispatch({ type: 'collision', outcome: 'crashed-terrain' });
+            }
+            // If neither, do nothing (e.g., collision between two terrain parts)
+        });
+        // --- End Collision Event Handling ---
 
         // 1. (Physics already initialized above)
         const { width: screenWidth, height: screenHeight } = Dimensions.get('window');

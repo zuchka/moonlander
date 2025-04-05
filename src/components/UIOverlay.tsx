@@ -50,12 +50,33 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
 
     const isGameOver = status !== 'playing';
     let statusMessage = '';
-    if (status === 'landed') statusMessage = 'Landed Safely!';
-    else if (status === 'crashed-fuel') statusMessage = 'Out of Fuel!';
-    else if (status.startsWith('crashed')) statusMessage = 'Crashed!';
+    // Update status message logic for detailed crash reasons
+    switch (status) {
+        case 'landed':
+            statusMessage = 'Landed Safely!';
+            break;
+        case 'crashed-fuel':
+            statusMessage = 'Out of Fuel!';
+            break;
+        case 'crashed-pad-speed':
+            statusMessage = 'Crashed! Too fast.';
+            break;
+        case 'crashed-pad-angle':
+            statusMessage = 'Crashed! Bad angle.';
+            break;
+        case 'crashed-terrain':
+            statusMessage = 'Crashed! Hit terrain.';
+            break;
+        default:
+            // Fallback for any unknown crash status
+            if (status.startsWith('crashed')) {
+                statusMessage = 'Crashed!';
+            }
+            break;
+    }
 
     const showNextLevelButton = status === 'landed' && currentLevel < totalLevels;
-    const showRestartButton = !showNextLevelButton;
+    const showRestartButton = isGameOver && !showNextLevelButton;
     const restartButtonText = status === 'landed' ? 'Replay Level' : 'Retry?';
 
     // Determine button styles based on state

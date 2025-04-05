@@ -13,6 +13,7 @@ interface LevelConfig {
     };
     lander: {
         initialFuel: number;
+        maxLandingSpeed: number;
     };
     terrain: {}; // Keep simple for now
 }
@@ -50,6 +51,7 @@ interface GameState {
     world: Matter.World;
     status: string; // e.g., 'playing', 'landed', 'crashed'
     fuel: number;
+    maxLandingSpeed: number;
     inputState: InputState; // Include the input state
     camera: { x: number; y: number }; // Example camera state
 }
@@ -108,6 +110,7 @@ const createInitialEntities = (
             world: world,
             status: 'playing',
             fuel: levelConfig.lander.initialFuel, // Use fuel from levelConfig
+            maxLandingSpeed: levelConfig.lander.maxLandingSpeed,
             inputState: {
                 thrusting: false,
                 lateral: 'none',

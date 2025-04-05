@@ -18,6 +18,9 @@ const TERRAIN_MAX_DY = 15;         // Max vertical change per step
 const TERRAIN_MIN_Y_FACTOR = 0.6;  // Min terrain height (fraction of screen height)
 const TERRAIN_MAX_Y_FACTOR = 0.85; // Max terrain height (fraction of screen height)
 
+// --- Landing Constants ---
+export const MAX_LANDING_ANGLE = 0.1; // Radians (~5.7 degrees) - Export this
+
 // --- Physics Engine Setup ---
 
 /**
