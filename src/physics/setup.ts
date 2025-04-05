@@ -132,13 +132,16 @@ export const generateTerrainVertices = (
     landingPadTopY: number // Add parameter for pad's Y coordinate
 ): Vec2D[][] => {
 
+    const LANDER_WIDTH = 40; // Hardcode lander width for safety check
+    // Ensure the physical flat area is wide enough for the lander
+    const physicalPadWidth = Math.max(landingPadWidth, LANDER_WIDTH + 4); // Add small buffer (4px)
+
     const minY = screenHeight * TERRAIN_MIN_Y_FACTOR;
     const maxY = screenHeight * TERRAIN_MAX_Y_FACTOR;
-    // Use the passed landingPadTopY instead of hardcoding
-    // const landingPadTopY = screenHeight - 50 - (10 / 2); // REMOVED
 
-    const padStartX = landingPadX - landingPadWidth / 2;
-    const padEndX = landingPadX + landingPadWidth / 2;
+    // Calculate the start/end of the *required physical flat zone*
+    const physicalPadStartX = landingPadX - physicalPadWidth / 2;
+    const physicalPadEndX = landingPadX + physicalPadWidth / 2;
 
     const topEdgePoints: Vec2D[] = [];
     let currentX = 0;
@@ -150,27 +153,33 @@ export const generateTerrainVertices = (
         const nextX = Math.min(currentX + TERRAIN_STEP_X, screenWidth);
         let nextY = currentY;
 
-        const isEnteringPad = currentX < padStartX && nextX >= padStartX;
-        const isExitingPad = currentX < padEndX && nextX >= padEndX;
-        const isInsidePad = currentX >= padStartX && nextX <= padEndX;
+        // Use physical pad boundaries for determining flat terrain
+        const isEnteringPad = currentX < physicalPadStartX && nextX >= physicalPadStartX;
+        const isExitingPad = currentX < physicalPadEndX && nextX >= physicalPadEndX;
+        const isInsidePad = currentX >= physicalPadStartX && nextX <= physicalPadEndX;
 
         if (isEnteringPad) {
-            topEdgePoints.push({ x: padStartX, y: landingPadTopY });
+            // Ensure flat terrain starts exactly at the physical boundary
+            topEdgePoints.push({ x: physicalPadStartX, y: landingPadTopY });
             nextY = landingPadTopY;
         } else if (isInsidePad) {
+            // Keep terrain flat inside the physical boundary
             nextY = landingPadTopY;
         } else if (isExitingPad) {
-            topEdgePoints.push({ x: padEndX, y: landingPadTopY });
+            // Ensure flat terrain ends exactly at the physical boundary
+            topEdgePoints.push({ x: physicalPadEndX, y: landingPadTopY });
+            // Resume jagged terrain after the physical boundary
             const dy = (Math.random() * 2 - 1) * TERRAIN_MAX_DY;
             nextY = Math.max(minY, Math.min(maxY, landingPadTopY + dy));
-       } else {
+        } else {
+            // Normal jagged terrain outside the physical boundary
             const dy = (Math.random() * 2 - 1) * TERRAIN_MAX_DY;
             nextY = Math.max(minY, Math.min(maxY, currentY + dy));
-       }
+        }
 
-       topEdgePoints.push({ x: nextX, y: nextY });
-       currentX = nextX;
-       currentY = nextY;
+        topEdgePoints.push({ x: nextX, y: nextY });
+        currentX = nextX;
+        currentY = nextY;
     }
 
     const segmentVerticesList: Vec2D[][] = [];
