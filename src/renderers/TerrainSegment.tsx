@@ -28,8 +28,7 @@ const TerrainSegment: React.FC<TerrainSegmentProps> = ({ vertices, testID, polyg
     return (
         <Svg
             testID={testID}
-            style={styles.terrainSvg} // Covers the whole area
-            // No specific width/height needed if covering screen and using world coords
+            style={styles.terrainSvg}
         >
             <Polygon
                 testID={polygonTestID}
@@ -49,7 +48,6 @@ const styles = StyleSheet.create({
         top: 0,
         width: '100%',
         height: '100%',
-        // backgroundColor: 'rgba(0, 255, 0, 0.05)', // Optional: debug bounds
     },
 });
 

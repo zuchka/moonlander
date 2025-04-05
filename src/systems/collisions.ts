@@ -36,8 +36,8 @@ const CollisionSystem = (entities: any, { dispatch }: any) => {
     if (collisions.length > 0) {
         // Prioritize landing pad collision checks
         const padCollision = collisions.find(collision =>
-            (collision.bodyA === landerBody && collision.bodyB.label === 'landingPad') ||
-            (collision.bodyB === landerBody && collision.bodyA.label === 'landingPad')
+            (collision.bodyA === landerBody && collision.bodyB.label === 'landing-pad') ||
+            (collision.bodyB === landerBody && collision.bodyA.label === 'landing-pad')
         );
 
         if (padCollision) {

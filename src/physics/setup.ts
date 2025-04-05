@@ -83,24 +83,55 @@ export const getExampleTerrainVertices = (): Vec2D[][] => {
     ];
 }
 
+// Landing Pad Size Constants
+const LANDING_PAD_WIDTH = 80;
+const LANDING_PAD_HEIGHT = 10;
+
+/**
+ * Creates the static physics body for the landing pad.
+ * @param {number} x - The center X coordinate for the landing pad.
+ * @param {number} y - The center Y coordinate for the landing pad.
+ * @param {IBodyDefinition} [options={}] - Optional Matter.js body options.
+ * @returns {Matter.Body} The landing pad physics body.
+ */
+export const createLandingPadBody = (x: number, y: number, options: IBodyDefinition = {}) => {
+    // Use provided x, y for the center position
+    return Matter.Bodies.rectangle(
+        x,
+        y,
+        LANDING_PAD_WIDTH,
+        LANDING_PAD_HEIGHT,
+        {
+            label: 'landing-pad',
+            isStatic: true,
+            isSensor: false, // Ensure it's solid
+            friction: 0.8, // Give it some friction
+            ...options,
+        }
+    );
+};
+
 /**
  * Generates vertex sets for jagged terrain segments, including a flat landing area.
  * @param screenWidth The width of the screen.
  * @param screenHeight The height of the screen.
  * @param landingPadX The center X coordinate of the landing pad.
  * @param landingPadWidth The width of the landing pad.
+ * @param landingPadTopY The Y coordinate for the top surface of the landing pad.
  * @returns {Vec2D[][]} An array of vertex arrays, each defining a terrain segment polygon.
  */
 export const generateTerrainVertices = (
     screenWidth: number,
     screenHeight: number,
     landingPadX: number,
-    landingPadWidth: number
+    landingPadWidth: number,
+    landingPadTopY: number // Add parameter for pad's Y coordinate
 ): Vec2D[][] => {
 
     const minY = screenHeight * TERRAIN_MIN_Y_FACTOR;
     const maxY = screenHeight * TERRAIN_MAX_Y_FACTOR;
-    const landingPadTopY = screenHeight - 50 - (10 / 2); // Using hardcoded 50 & 10
+    // Use the passed landingPadTopY instead of hardcoding
+    // const landingPadTopY = screenHeight - 50 - (10 / 2); // REMOVED
 
     const padStartX = landingPadX - landingPadWidth / 2;
     const padEndX = landingPadX + landingPadWidth / 2;
@@ -167,7 +198,7 @@ export const createTerrainBodies = (terrainVertices?: Vec2D[][], options: IBodyD
         const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
         const landingPadX = screenWidth / 2;
         const landingPadWidth = 80; // Use constant - should ideally come from shared constants
-        verticesToUse = generateTerrainVertices(screenWidth, screenHeight, landingPadX, landingPadWidth);
+        verticesToUse = generateTerrainVertices(screenWidth, screenHeight, landingPadX, landingPadWidth, 0);
     }
 
     return verticesToUse.map((vertices: Vec2D[]) => {
@@ -189,47 +220,4 @@ export const createTerrainBodies = (terrainVertices?: Vec2D[][], options: IBodyD
         }
         return body;
     });
-};
-
-
-// Landing Pad Size Constants
-const LANDING_PAD_WIDTH = 80;
-const LANDING_PAD_HEIGHT = 10;
-
-/**
- * Creates the static physics body for the landing pad.
- * @param {IBodyDefinition} [options] - Optional Matter.js body options.
- * @returns {Matter.Body} The landing pad physics body.
- */
-export const createLandingPadBody = (options: IBodyDefinition = {}) => {
-  // Get dimensions inside the function
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-  const landingPadX = screenWidth / 2;
-  const landingPadY = screenHeight - 50 - (LANDING_PAD_HEIGHT / 2);
-
-  const body = Matter.Bodies.rectangle(
-    landingPadX,
-    landingPadY,
-    LANDING_PAD_WIDTH,
-    LANDING_PAD_HEIGHT,
-    {
-      label: 'landingPad',
-      isStatic: true,
-      isSensor: false, // Set default base properties
-      // Spread base options, excluding ones we'll set explicitly
-      ...options,
-      render: { visible: false, ...(options.render || {}) }, // Merge render options
-    }
-  );
-
-  // Explicitly set properties after creation
-  if (options.friction !== undefined) {
-      body.friction = options.friction;
-  }
-  if (options.isSensor !== undefined) {
-      body.isSensor = options.isSensor;
-  }
-  // Add other properties here if needed
-
-  return body;
 }; 

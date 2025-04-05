@@ -65,43 +65,51 @@ export default function GameScreen() {
     // --- Game Setup/Restart Logic ---
     const setupGame = useCallback(() => {
         console.log('Setting up / Restarting game...');
-        // Clear previous engine if exists
-        if (physicsRef.current?.engine) {
-            Matter.Engine.clear(physicsRef.current.engine);
-        }
 
-        // 1. Initialize Physics Engine and World
+        // Always initialize a fresh physics instance.
         const physics = initializePhysics();
-        physicsRef.current = physics;
+        physicsRef.current = physics; // Store the new instance in the ref
         const { engine, world } = physics;
+
+        // 1. (Physics already initialized above)
 
         // Pre-calculate dimensions and landing pad info
         const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-        const landingPadX = screenWidth / 2;
         const landingPadWidth = GAME_CONSTANTS.PAD_WIDTH;
 
-        // 2. Create Physics Bodies
+        // --- Randomize Landing Pad Position --- START
+        const minPadX = landingPadWidth; // Keep some margin from left edge
+        const maxPadX = screenWidth - landingPadWidth; // Keep some margin from right edge
+        const landingPadX = Math.floor(Math.random() * (maxPadX - minPadX + 1)) + minPadX;
+        // --- Randomize Landing Pad Position --- END
+
+        // Y position calculation needs landingPadHeight (use constant)
+        const landingPadY = screenHeight - 50 - (GAME_CONSTANTS.PAD_HEIGHT / 2); // Position relative to bottom margin
+        const landingPadTopY = landingPadY - (GAME_CONSTANTS.PAD_HEIGHT / 2); // Top surface Y
+
+        // 2. Create Physics Bodies (using the new world)
         const originalTerrainVertices = generateTerrainVertices(
             screenWidth,
             screenHeight,
-            landingPadX,
-            landingPadWidth
+            landingPadX, // Use randomized X
+            landingPadWidth,
+            landingPadTopY // Pass the calculated top Y
         );
-        const landerBody = createLanderBody(); // No need for ref if only used here
+        const landerBody = createLanderBody();
         const terrainBodies = createTerrainBodies(originalTerrainVertices);
-        const landingPadBody = createLandingPadBody();
+        const landingPadBody = createLandingPadBody(landingPadX, landingPadY);
 
-        // 3. Add Bodies to World
+        // 3. Add Bodies to the new World
         Matter.World.add(world, [
             landerBody,
             ...terrainBodies,
             landingPadBody,
         ]);
 
-        // 4. Create Initial Entities
+        // 4. Create Initial Entities (using the new engine/world)
         const initialEntities = createInitialEntities(
-            engine,
-            world,
+            engine, // Pass the new engine
+            world,  // Pass the new world
             landerBody,
             terrainBodies,
             originalTerrainVertices,
@@ -109,7 +117,7 @@ export default function GameScreen() {
             GAME_CONSTANTS
         );
         setEntities(initialEntities);
-        console.log('New entities created:', Object.keys(initialEntities));
+        console.log('New entities created with fresh physics world.');
 
         // Reset Input State on setup/restart
         setIsThrusting(false);
@@ -124,7 +132,7 @@ export default function GameScreen() {
             status: 'playing',
         });
         setRunning(true);
-        setGameKey(prevKey => prevKey + 1);
+        setGameKey(prevKey => prevKey + 1); // Increment key to force GameEngine remount
 
     }, []); // useCallback with empty dependency array
 
@@ -225,7 +233,14 @@ export default function GameScreen() {
         // Also include lateralInput to ensure keyup logic uses latest state
     }, [handleStartThrust, handleStopThrust, handleStartMoveLeft, handleStartMoveRight, handleStopMove, lateralInput]);
 
-    // --- Render Game Engine & UI ---
+    // --- Prepare Entities for Current Frame ---
+    const currentFrameEntities = entities ? { ...entities } : null;
+    if (currentFrameEntities && currentFrameEntities.gameState?.inputState) {
+        currentFrameEntities.gameState.inputState.thrusting = isThrusting;
+        currentFrameEntities.gameState.inputState.lateral = lateralInput;
+    }
+
+    // Reverted loading state handling
     if (!entities) {
         return (
             <View style={styles.container}>
@@ -234,33 +249,18 @@ export default function GameScreen() {
         );
     }
 
-    // --- Create entities object for this render frame ---
-    // Start with the current entities state
-    const currentFrameEntities = { ...entities }; 
-    // Ensure gameState and inputState exist before modifying
-    if (currentFrameEntities.gameState && currentFrameEntities.gameState.inputState) {
-        // Update the inputState within the entities object for this frame
-        currentFrameEntities.gameState.inputState.thrusting = isThrusting;
-        currentFrameEntities.gameState.inputState.lateral = lateralInput;
-    }
-    // --- IMPORTANT: This direct mutation isn't ideal for state management paradigms
-    // but is a common pattern when bridging external state into react-native-game-engine.
-
     return (
         <View style={styles.container}>
             <GameEngine
                 key={gameKey}
                 ref={gameEngineRef}
                 style={styles.gameContainer}
-                systems={systems} // Ensure InputSystem is NOT in here
-                entities={currentFrameEntities} // Pass potentially updated entities
+                systems={systems}
+                entities={entities}
                 running={running}
-                onEvent={handleEvent} // Use the memoized handler
-            >
-                {/* Status Bar */}
-            </GameEngine>
+                onEvent={handleEvent}
+            />
 
-            {/* Render UI Overlay - pass action handlers */}
             <UIOverlay
                 fuel={uiData.fuel}
                 altitude={uiData.altitude}
@@ -280,14 +280,13 @@ export default function GameScreen() {
     );
 }
 
-// Basic styles
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#000',
     },
     gameContainer: {
-        flex: 1, // Make engine fill the container
+        flex: 1,
     },
     loadingText: {
         color: '#fff',
