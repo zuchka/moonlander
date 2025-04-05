@@ -13,13 +13,13 @@ interface UIOverlayProps {
     status: string;
     // Optional props for button styling
     isThrusting?: boolean;
-    rotationDirection?: 'left' | 'right' | 'none';
+    lateralDirection?: 'left' | 'right' | 'none';
     // Action callbacks
     onStartThrust: () => void;
     onStopThrust: () => void;
-    onStartRotateLeft: () => void;
-    onStartRotateRight: () => void;
-    onStopRotate: () => void;
+    onStartMoveLeft: () => void;
+    onStartMoveRight: () => void;
+    onStopMove: () => void;
     onRestart: () => void;
 }
 
@@ -30,12 +30,12 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     vVel,
     status,
     isThrusting,
-    rotationDirection,
+    lateralDirection,
     onStartThrust,
     onStopThrust,
-    onStartRotateLeft,
-    onStartRotateRight,
-    onStopRotate,
+    onStartMoveLeft,
+    onStartMoveRight,
+    onStopMove,
     onRestart,
 }) => {
 
@@ -47,6 +47,11 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     if (status === 'landed') statusMessage = 'Landed Safely!';
     else if (status === 'crashed-fuel') statusMessage = 'Out of Fuel!';
     else if (status.startsWith('crashed')) statusMessage = 'Crashed!';
+
+    // Determine button styles based on state
+    const thrustButtonStyle = isThrusting ? styles.buttonActive : styles.buttonInactive;
+    const leftButtonStyle = lateralDirection === 'left' ? styles.buttonActive : styles.buttonInactive;
+    const rightButtonStyle = lateralDirection === 'right' ? styles.buttonActive : styles.buttonInactive;
 
     return (
         <View style={styles.overlayContainer} pointerEvents="box-none"> 
@@ -72,23 +77,23 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
             {!isGameOver && (
                  <View style={styles.controlsContainer} pointerEvents="box-none"> 
                     <TouchableOpacity
-                        style={styles.controlButton}
-                        onPressIn={onStartRotateLeft}
-                        onPressOut={onStopRotate}
+                        style={[styles.controlButton, styles.leftButton, leftButtonStyle]}
+                        onPressIn={onStartMoveLeft}
+                        onPressOut={onStopMove}
                     >
                         <Text style={styles.controlText}>{'<'}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={styles.controlButton}
+                        style={[styles.controlButton, styles.thrustButton, thrustButtonStyle]}
                         onPressIn={onStartThrust}
                         onPressOut={onStopThrust}
                     >
                         <Text style={styles.controlText}>^</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={styles.controlButton}
-                        onPressIn={onStartRotateRight}
-                        onPressOut={onStopRotate}
+                        style={[styles.controlButton, styles.rightButton, rightButtonStyle]}
+                        onPressIn={onStartMoveRight}
+                        onPressOut={onStopMove}
                     >
                         <Text style={styles.controlText}>{'>'}</Text>
                     </TouchableOpacity>
@@ -169,6 +174,21 @@ const styles = StyleSheet.create({
         color: 'black',
         fontSize: 24,
         fontWeight: 'bold',
+    },
+    buttonActive: {
+        backgroundColor: 'rgba(0, 255, 0, 0.5)',
+    },
+    buttonInactive: {
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    },
+    leftButton: {
+        // Add left button styles if needed
+    },
+    rightButton: {
+        // Add right button styles if needed
+    },
+    thrustButton: {
+        // Add thrust button styles if needed
     },
 });
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { StyleSheet, View, Text, Dimensions, AppState } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, AppState, Platform } from 'react-native';
 import Matter from 'matter-js';
 import { GameEngine } from 'react-native-game-engine';
 
@@ -60,7 +60,7 @@ export default function GameScreen() {
 
     // State for Player Input Actions
     const [isThrusting, setIsThrusting] = useState(false);
-    const [rotationInput, setRotationInput] = useState<'left' | 'right' | 'none'>('none');
+    const [lateralInput, setLateralInput] = useState<'left' | 'right' | 'none'>('none');
 
     // --- Game Setup/Restart Logic ---
     const setupGame = useCallback(() => {
@@ -113,7 +113,7 @@ export default function GameScreen() {
 
         // Reset Input State on setup/restart
         setIsThrusting(false);
-        setRotationInput('none');
+        setLateralInput('none');
 
         // Reset UI State & Running State
         setUiData({
@@ -166,9 +166,64 @@ export default function GameScreen() {
     // --- Action Handlers for UI Controls (Now update state) ---
     const handleStartThrust = useCallback(() => setIsThrusting(true), []);
     const handleStopThrust = useCallback(() => setIsThrusting(false), []);
-    const handleStartRotateLeft = useCallback(() => setRotationInput('left'), []);
-    const handleStartRotateRight = useCallback(() => setRotationInput('right'), []);
-    const handleStopRotate = useCallback(() => setRotationInput('none'), []);
+    const handleStartMoveLeft = useCallback(() => setLateralInput('left'), []);
+    const handleStartMoveRight = useCallback(() => setLateralInput('right'), []);
+    const handleStopMove = useCallback(() => setLateralInput('none'), []);
+
+    // --- Keyboard Event Handling --- (New Section)
+    useEffect(() => {
+        // Only add keyboard listeners on web platforms
+        if (Platform.OS !== 'web') {
+            return;
+        }
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.repeat) return; // Ignore repeated events from holding key down
+
+            switch (e.key) {
+                case 'ArrowUp':
+                    handleStartThrust();
+                    break;
+                case 'ArrowLeft':
+                    handleStartMoveLeft();
+                    break;
+                case 'ArrowRight':
+                    handleStartMoveRight();
+                    break;
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            switch (e.key) {
+                case 'ArrowUp':
+                    handleStopThrust();
+                    break;
+                case 'ArrowLeft':
+                    // Only stop if moving left was the last input
+                    if (lateralInput === 'left') {
+                       handleStopMove();
+                    }
+                    break;
+                case 'ArrowRight':
+                    // Only stop if moving right was the last input
+                    if (lateralInput === 'right') {
+                       handleStopMove();
+                    }
+                    break;
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        // Cleanup function
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+        // Re-run if handlers change identity (they shouldn't with useCallback)
+        // Also include lateralInput to ensure keyup logic uses latest state
+    }, [handleStartThrust, handleStopThrust, handleStartMoveLeft, handleStartMoveRight, handleStopMove, lateralInput]);
 
     // --- Render Game Engine & UI ---
     if (!entities) {
@@ -186,7 +241,7 @@ export default function GameScreen() {
     if (currentFrameEntities.gameState && currentFrameEntities.gameState.inputState) {
         // Update the inputState within the entities object for this frame
         currentFrameEntities.gameState.inputState.thrusting = isThrusting;
-        currentFrameEntities.gameState.inputState.rotation = rotationInput;
+        currentFrameEntities.gameState.inputState.lateral = lateralInput;
     }
     // --- IMPORTANT: This direct mutation isn't ideal for state management paradigms
     // but is a common pattern when bridging external state into react-native-game-engine.
@@ -213,12 +268,12 @@ export default function GameScreen() {
                 vVel={uiData.vVel}
                 status={uiData.status}
                 isThrusting={isThrusting}
-                rotationDirection={rotationInput}
+                lateralDirection={lateralInput}
                 onStartThrust={handleStartThrust}
                 onStopThrust={handleStopThrust}
-                onStartRotateLeft={handleStartRotateLeft}
-                onStartRotateRight={handleStartRotateRight}
-                onStopRotate={handleStopRotate}
+                onStartMoveLeft={handleStartMoveLeft}
+                onStartMoveRight={handleStartMoveRight}
+                onStopMove={handleStopMove}
                 onRestart={setupGame}
             />
         </View>

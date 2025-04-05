@@ -3,6 +3,7 @@ import Lander from '@/src/renderers/Lander';
 import TerrainSegment from '@/src/renderers/TerrainSegment';
 import LandingPad from '@/src/renderers/LandingPad';
 import { Vec2D } from '@/src/physics/setup';
+import { Dimensions } from 'react-native';
 
 // Define the structure for the constants needed
 interface GameConstants {
@@ -23,15 +24,20 @@ interface GameEntity {
     [key: string]: any; // Allow other properties
 }
 
-// Define structure for gameState, including inputState
+// Define the input state structure
+interface InputState {
+    thrusting: boolean;
+    lateral: 'left' | 'right' | 'none'; // Renamed from rotation
+}
+
+// Define the game state structure
 interface GameState {
-    status: string;
+    engine: Matter.Engine;
+    world: Matter.World;
+    status: string; // e.g., 'playing', 'landed', 'crashed'
     fuel: number;
-    inputState: { // Add input state object
-        thrusting: boolean;
-        rotation: 'left' | 'right' | 'none';
-    };
-    [key: string]: any;
+    inputState: InputState; // Include the input state
+    camera: { x: number; y: number }; // Example camera state
 }
 
 // Define the overall entities structure type
@@ -44,18 +50,18 @@ interface Entities {
 }
 
 /**
- * Creates the initial set of entities for the game engine.
+ * Function to create initial game entities.
  *
- * @param engine The Matter.js physics engine instance.
- * @param world The Matter.js physics world instance.
+ * @param engine The Matter.js engine instance.
+ * @param world The Matter.js world instance.
  * @param landerBody The pre-created Matter.js body for the lander.
  * @param terrainBodies An array of pre-created Matter.js bodies for the terrain segments.
- * @param terrainVertices The original array of vertex arrays used to create the terrain bodies.
+ * @param terrainVertices The original vertex data for each terrain segment.
  * @param landingPadBody The pre-created Matter.js body for the landing pad.
  * @param constants An object containing game constants like dimensions and initial fuel.
  * @returns The initial entities object for react-native-game-engine.
  */
-export const createInitialEntities = (
+const createInitialEntities = (
     engine: Matter.Engine,
     world: Matter.World,
     landerBody: Matter.Body,
@@ -64,6 +70,7 @@ export const createInitialEntities = (
     landingPadBody: Matter.Body,
     constants: GameConstants
 ): Entities => {
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
     const initialEntities: Partial<Entities> = {
         physics: { engine, world },
@@ -78,12 +85,15 @@ export const createInitialEntities = (
             renderer: LandingPad, // Assign LandingPad component
         },
         gameState: {
+            engine: engine,
+            world: world,
             status: 'playing',
             fuel: constants.INITIAL_FUEL,
             inputState: { // Initialize input state
                 thrusting: false,
-                rotation: 'none',
-            }
+                lateral: 'none', // Use new field name
+            },
+            camera: { x: screenWidth / 2, y: screenHeight / 2 }, // Initial camera centered
         },
     };
 
@@ -105,5 +115,8 @@ export const createInitialEntities = (
 
     // We perform a type assertion here because we've programmatically built
     // the object to conform to the Entities interface.
-    return initialEntities as Entities;
-}; 
+    const entities = initialEntities as Entities;
+    return entities;
+};
+
+export { createInitialEntities, Entities, GameState, InputState }; // Keep this export for function and types 
