@@ -27,7 +27,9 @@ const TERRAIN_MAX_Y_FACTOR = 0.85; // Max terrain height (fraction of screen hei
 export const initializePhysics = () => {
   const engine = Matter.Engine.create();
   const world = engine.world;
-  world.gravity.y = 0.05; // Adjust gravity as needed
+  // Adjust gravity for Moon (~1/6th Earth)
+  // Earth baseline often ~1.0, so Moon ~0.167
+  world.gravity.y = 0.16; // Increased from 0.05
 
   // Optional bounds - if uncommented, these would also need dynamic dimensions
   // const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
