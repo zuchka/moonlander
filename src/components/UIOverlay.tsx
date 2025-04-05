@@ -11,6 +11,8 @@ interface UIOverlayProps {
     hVel: number;
     vVel: number;
     status: string;
+    crashSpeed?: number;
+    crashSpeedLimit?: number;
     currentLevel: number;
     totalLevels: number;
     // Optional props for button styling
@@ -32,6 +34,8 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     hVel,
     vVel,
     status,
+    crashSpeed,
+    crashSpeedLimit,
     currentLevel,
     totalLevels,
     isThrusting,
@@ -60,6 +64,10 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
             break;
         case 'crashed-pad-speed':
             statusMessage = 'Crashed! Too fast.';
+            // Append speed details if available
+            if (typeof crashSpeed === 'number' && typeof crashSpeedLimit === 'number') {
+                statusMessage += `\nSpeed: ${formatNumber(crashSpeed)}, Limit: ${formatNumber(crashSpeedLimit)}`;
+            }
             break;
         case 'crashed-pad-angle':
             statusMessage = 'Crashed! Bad angle.';

@@ -23,14 +23,25 @@ const GameStateSystem = (entities: any, { events }: any) => {
     if (events && events.length > 0) {
         events.forEach((event: any) => {
             if (event.type === 'collision') {
+                // Clear previous crash details on any new collision outcome
+                delete gameState.crashSpeed;
+                delete gameState.crashSpeedLimit;
+
                 switch (event.outcome) {
                     case 'landed':
                         gameState.status = 'landed';
                         break;
                     case 'crashed-terrain':
-                    case 'crashed-pad-speed':
                     case 'crashed-pad-angle':
-                        gameState.status = event.outcome; // Use the specific crash reason
+                        gameState.status = event.outcome;
+                        break;
+                    case 'crashed-pad-speed':
+                        gameState.status = event.outcome;
+                        // Store speed details if available in the event payload
+                        if (typeof event.speed === 'number' && typeof event.limit === 'number') {
+                            gameState.crashSpeed = event.speed;
+                            gameState.crashSpeedLimit = event.limit;
+                        }
                         break;
                 }
                 // Once a collision changes status, we might ignore subsequent events in the same tick

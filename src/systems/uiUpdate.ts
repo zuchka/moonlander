@@ -76,6 +76,9 @@ const UISystem = (entities: Entities, { dispatch }: any) => {
             hVel,
             vVel,
             status,
+            // Pass crash details if they exist
+            crashSpeed: gameState.crashSpeed,
+            crashSpeedLimit: gameState.crashSpeedLimit,
             landerX, // Keep sending these if needed elsewhere
             landerY,
             landerAngle

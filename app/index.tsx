@@ -61,6 +61,9 @@ export default function GameScreen() {
         hVel: 0,
         vVel: 0,
         status: 'playing',
+        // Initialize crash speed details
+        crashSpeed: undefined as number | undefined,
+        crashSpeedLimit: undefined as number | undefined,
     });
 
     // State for Player Input Actions
@@ -134,7 +137,13 @@ export default function GameScreen() {
                     (gameEngineRef.current as any)?.dispatch({ type: 'collision', outcome: 'landed' });
                 } else {
                     const reason = landerBodyForCheck.speed >= maxLandingSpeed ? 'speed' : 'angle';
-                    (gameEngineRef.current as any)?.dispatch({ type: 'collision', outcome: `crashed-pad-${reason}` });
+                    // Dispatch speed details if the reason is speed
+                    const payload: any = { type: 'collision', outcome: `crashed-pad-${reason}` };
+                    if (reason === 'speed') {
+                        payload.speed = landerBodyForCheck.speed;
+                        payload.limit = maxLandingSpeed;
+                    }
+                    (gameEngineRef.current as any)?.dispatch(payload);
                 }
             } else if (didCollideWithTerrain) {
                 // Only dispatch terrain crash if NO pad collision occurred
@@ -195,6 +204,9 @@ export default function GameScreen() {
             hVel: 0,
             vVel: 0,
             status: 'playing',
+            // Initialize crash speed details
+            crashSpeed: undefined,
+            crashSpeedLimit: undefined,
         });
         setRunning(true);
 
@@ -381,6 +393,9 @@ export default function GameScreen() {
                 hVel={uiData.hVel}
                 vVel={uiData.vVel}
                 status={uiData.status}
+                // Pass crash speed details from state
+                crashSpeed={uiData.crashSpeed}
+                crashSpeedLimit={uiData.crashSpeedLimit}
                 isThrusting={isThrusting}
                 lateralDirection={lateralInput}
                 currentLevel={currentLevel}

@@ -54,6 +54,8 @@ interface GameState {
     maxLandingSpeed: number;
     inputState: InputState; // Include the input state
     camera: { x: number; y: number }; // Example camera state
+    crashSpeed?: number;
+    crashSpeedLimit?: number;
 }
 
 // Define the overall entities structure type
