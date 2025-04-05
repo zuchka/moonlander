@@ -1,0 +1,62 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<TerrainSegment /> Renderer matches snapshot 1`] = `
+<RNSVGSvgView
+  bbHeight="100%"
+  bbWidth="100%"
+  focusable={false}
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderWidth": 0,
+      },
+      {
+        "height": "100%",
+        "left": 0,
+        "position": "absolute",
+        "top": 0,
+        "width": "100%",
+      },
+      {
+        "flex": 0,
+        "height": "100%",
+        "width": "100%",
+      },
+    ]
+  }
+>
+  <RNSVGGroup
+    fill={
+      {
+        "payload": 4278190080,
+        "type": 0,
+      }
+    }
+  >
+    <RNSVGPath
+      d="M0 500 100 450 200 480 200 600 0 600z"
+      fill={
+        {
+          "payload": 4289309097,
+          "type": 0,
+        }
+      }
+      propList={
+        [
+          "fill",
+          "stroke",
+          "strokeWidth",
+        ]
+      }
+      stroke={
+        {
+          "payload": 4286611584,
+          "type": 0,
+        }
+      }
+      strokeWidth="1"
+    />
+  </RNSVGGroup>
+</RNSVGSvgView>
+`;

@@ -1,0 +1,62 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<LandingPad /> Renderer matches snapshot 1`] = `
+<RNSVGSvgView
+  bbHeight={10}
+  bbWidth={80}
+  focusable={false}
+  height={10}
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderWidth": 0,
+      },
+      [
+        {
+          "position": "absolute",
+        },
+        {
+          "height": 10,
+          "left": 360,
+          "top": 545,
+          "width": 80,
+        },
+      ],
+      {
+        "flex": 0,
+        "height": 10,
+        "width": 80,
+      },
+    ]
+  }
+  width={80}
+>
+  <RNSVGGroup
+    fill={
+      {
+        "payload": 4278190080,
+        "type": 0,
+      }
+    }
+  >
+    <RNSVGRect
+      fill={
+        {
+          "payload": 4282168177,
+          "type": 0,
+        }
+      }
+      height={10}
+      propList={
+        [
+          "fill",
+        ]
+      }
+      width={80}
+      x="0"
+      y="0"
+    />
+  </RNSVGGroup>
+</RNSVGSvgView>
+`;
