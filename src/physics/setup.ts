@@ -1,4 +1,4 @@
-import Matter from 'matter-js';
+import Matter, { Vertices } from 'matter-js';
 import decomp from 'poly-decomp';
 import { Dimensions } from 'react-native';
 import { IBodyDefinition } from 'matter-js';
@@ -10,7 +10,13 @@ Matter.Common.setDecomp(decomp);
 // const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Define type for vertices
-type Vec2D = { x: number; y: number };
+export type Vec2D = { x: number; y: number };
+
+// --- Constants for Terrain Generation ---
+const TERRAIN_STEP_X = 20;         // Horizontal distance between points
+const TERRAIN_MAX_DY = 15;         // Max vertical change per step
+const TERRAIN_MIN_Y_FACTOR = 0.6;  // Min terrain height (fraction of screen height)
+const TERRAIN_MAX_Y_FACTOR = 0.85; // Max terrain height (fraction of screen height)
 
 // --- Physics Engine Setup ---
 
@@ -67,7 +73,7 @@ export const createLanderBody = (options = {}) => {
 };
 
 // Function to generate example terrain based on current dimensions
-const getExampleTerrainVertices = (): Vec2D[][] => {
+export const getExampleTerrainVertices = (): Vec2D[][] => {
     const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
     return [
         // A simple flat ground segment
@@ -78,35 +84,109 @@ const getExampleTerrainVertices = (): Vec2D[][] => {
 }
 
 /**
+ * Generates vertex sets for jagged terrain segments, including a flat landing area.
+ * @param screenWidth The width of the screen.
+ * @param screenHeight The height of the screen.
+ * @param landingPadX The center X coordinate of the landing pad.
+ * @param landingPadWidth The width of the landing pad.
+ * @returns {Vec2D[][]} An array of vertex arrays, each defining a terrain segment polygon.
+ */
+export const generateTerrainVertices = (
+    screenWidth: number,
+    screenHeight: number,
+    landingPadX: number,
+    landingPadWidth: number
+): Vec2D[][] => {
+
+    const minY = screenHeight * TERRAIN_MIN_Y_FACTOR;
+    const maxY = screenHeight * TERRAIN_MAX_Y_FACTOR;
+    const landingPadTopY = screenHeight - 50 - (10 / 2); // Using hardcoded 50 & 10
+
+    const padStartX = landingPadX - landingPadWidth / 2;
+    const padEndX = landingPadX + landingPadWidth / 2;
+
+    const topEdgePoints: Vec2D[] = [];
+    let currentX = 0;
+    let currentY = Math.min(maxY, landingPadTopY + Math.random() * 50);
+
+    topEdgePoints.push({ x: currentX, y: currentY });
+
+    while (currentX < screenWidth) {
+        const nextX = Math.min(currentX + TERRAIN_STEP_X, screenWidth);
+        let nextY = currentY;
+
+        const isEnteringPad = currentX < padStartX && nextX >= padStartX;
+        const isExitingPad = currentX < padEndX && nextX >= padEndX;
+        const isInsidePad = currentX >= padStartX && nextX <= padEndX;
+
+        if (isEnteringPad) {
+            topEdgePoints.push({ x: padStartX, y: landingPadTopY });
+            nextY = landingPadTopY;
+        } else if (isInsidePad) {
+            nextY = landingPadTopY;
+        } else if (isExitingPad) {
+            topEdgePoints.push({ x: padEndX, y: landingPadTopY });
+            const dy = (Math.random() * 2 - 1) * TERRAIN_MAX_DY;
+            nextY = Math.max(minY, Math.min(maxY, landingPadTopY + dy));
+       } else {
+            const dy = (Math.random() * 2 - 1) * TERRAIN_MAX_DY;
+            nextY = Math.max(minY, Math.min(maxY, currentY + dy));
+       }
+
+       topEdgePoints.push({ x: nextX, y: nextY });
+       currentX = nextX;
+       currentY = nextY;
+    }
+
+    const segmentVerticesList: Vec2D[][] = [];
+    for (let i = 0; i < topEdgePoints.length - 1; i++) {
+        const p1 = topEdgePoints[i];
+        const p2 = topEdgePoints[i+1];
+        segmentVerticesList.push([
+            { x: p1.x, y: p1.y },
+            { x: p2.x, y: p2.y },
+            { x: p2.x, y: screenHeight },
+            { x: p1.x, y: screenHeight },
+        ]);
+    }
+
+    return segmentVerticesList;
+};
+
+/**
  * Creates static physics bodies for the terrain.
  * @param {Vec2D[][]} [terrainVertices] - Optional array of vertex arrays defining terrain segments. Defaults to example terrain.
  * @param {IBodyDefinition} [options] - Optional Matter.js body options.
  * @returns {Array<Matter.Body>} An array of terrain physics bodies.
  */
 export const createTerrainBodies = (terrainVertices?: Vec2D[][], options: IBodyDefinition = {}) => {
-    // Use provided vertices or generate default ones
-    const verticesToUse = terrainVertices ?? getExampleTerrainVertices();
+    let verticesToUse: Vec2D[][];
+    if (terrainVertices) {
+        verticesToUse = terrainVertices;
+    } else {
+        const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+        const landingPadX = screenWidth / 2;
+        const landingPadWidth = 80; // Use constant - should ideally come from shared constants
+        verticesToUse = generateTerrainVertices(screenWidth, screenHeight, landingPadX, landingPadWidth);
+    }
 
     return verticesToUse.map((vertices: Vec2D[]) => {
+        const centre = Matter.Vertices.centre(vertices);
         const body = Matter.Bodies.fromVertices(
-            0, // x position
-            0, // y position
+            centre.x,
+            centre.y,
             [vertices],
             {
                 label: 'terrain',
                 isStatic: true,
-                // Spread base options, excluding friction and potentially complex ones like render
                 ...options,
                 render: { visible: false, ...(options.render || {}) }
             }
         );
 
-        // Explicitly set properties that might be ignored for static bodies during creation
         if (options.friction !== undefined) {
             body.friction = options.friction;
         }
-        // Add other properties here if needed
-
         return body;
     });
 };

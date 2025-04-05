@@ -9,10 +9,11 @@ const FUEL_CONSUMPTION_RATE = 0.1; // Fuel consumed per tick of thrust
  * The ControlSystem handles player input to control the lander.
  *
  * @param entities The current state of all game entities.
- * @param input An object containing the input payload (array of events).
+ * @param args An object containing time, input, dispatch, and events data.
  * @returns The updated entities state.
  */
-const ControlSystem = (entities: any, { input }: any) => {
+const ControlSystem = (entities: any, args: any) => {
+    const { input } = args; // Destructure input from args
     const engine = entities.physics.engine;
     const lander = entities.lander;
     const gameState = entities.gameState;
@@ -22,9 +23,11 @@ const ControlSystem = (entities: any, { input }: any) => {
         return entities;
     }
 
-    const payload = input.find((x: any) => x.name === 'dispatch-input');
+    // Ensure input is an array before calling find
+    const inputArray = input || [];
+    const payload = inputArray.find((x: any) => x.name === 'dispatch-input');
 
-    if (payload) {
+    if (payload && payload.events) { // Also check if payload.events exists
         let thrusting = false;
         let rotateDirection = 0; // -1 for left, 1 for right, 0 for none
 

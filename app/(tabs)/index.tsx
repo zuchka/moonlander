@@ -9,6 +9,8 @@ import {
     createLanderBody,
     createTerrainBodies,
     createLandingPadBody,
+    generateTerrainVertices,
+    Vec2D,
 } from '@/src/physics/setup';
 
 // Entities Setup (Step 3.B-1)
@@ -52,10 +54,21 @@ export default function GameScreen() {
         physicsRef.current = physics;
         const { engine, world } = physics;
 
+        // Pre-calculate dimensions and landing pad info needed for generation
+        const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+        const landingPadX = screenWidth / 2; // Consistent calculation
+        const landingPadWidth = GAME_CONSTANTS.PAD_WIDTH; // Use constant
+
         // 2. Create Physics Bodies
-        landerBodyRef.current = createLanderBody({ /* options if needed */ });
-        terrainBodiesRef.current = createTerrainBodies(); // Using default terrain
-        landingPadBodyRef.current = createLandingPadBody({ /* options if needed */ });
+        const originalTerrainVertices = generateTerrainVertices(
+            screenWidth,
+            screenHeight,
+            landingPadX,
+            landingPadWidth
+        );
+        landerBodyRef.current = createLanderBody({ /* options */ });
+        terrainBodiesRef.current = createTerrainBodies(originalTerrainVertices);
+        landingPadBodyRef.current = createLandingPadBody({ /* options */ });
 
         // 3. Add Bodies to World
         Matter.World.add(world, [
@@ -70,6 +83,7 @@ export default function GameScreen() {
             world,
             landerBodyRef.current,
             terrainBodiesRef.current,
+            originalTerrainVertices,
             landingPadBodyRef.current,
             GAME_CONSTANTS
         );

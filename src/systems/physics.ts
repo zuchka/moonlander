@@ -9,15 +9,21 @@ import Matter from 'matter-js';
  */
 const PhysicsSystem = (entities: any, { time }: any) => {
     const engine = entities.physics.engine;
+    // console.log('Physics Tick, delta:', time?.delta); // Remove log
 
-    // Update the physics engine via the instance method
-    if (engine && typeof engine.update === 'function') {
-        engine.update(time.delta);
-    } else {
-        // Fallback or error for safety, though shouldn't happen if entities are structured correctly
-        console.warn('PhysicsSystem: Engine or engine.update method not found!');
-        // Matter.Engine.update(engine, time.delta); // Remove static call
-    }
+    // Cap delta time to avoid physics instability
+    const maxDelta = 16.667; // Corresponds to 60 FPS
+    const cappedDelta = Math.min(time.delta, maxDelta);
+
+    // Use the static Matter.Engine.update function with the capped delta
+    Matter.Engine.update(engine, cappedDelta);
+
+    // Remove the previous instance check logic
+    // if (engine && typeof engine.update === 'function') {
+    //     engine.update(time.delta);
+    // } else {
+    //     console.warn('PhysicsSystem: Engine or engine.update method not found!');
+    // }
 
     // Return the entities state. Although this system doesn't modify the entities
     // object directly in this implementation, it's conventional for systems to return it.
