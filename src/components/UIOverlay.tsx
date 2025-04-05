@@ -137,7 +137,8 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
 
     // Override status message if it's the final game over
     if (isFinalGameOver) {
-        statusMessage = 'Game Over!';
+        // Include the reached level in the game over message
+        statusMessage = `Game Over!\nReached Level: ${currentLevel}`;
     }
 
     const showNextLevelButton = status === 'landed' && currentLevel < totalLevels && !isFinalGameOver;
