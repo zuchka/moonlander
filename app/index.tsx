@@ -3,8 +3,9 @@ import { StyleSheet, View, Text, Dimensions, AppState, Platform } from 'react-na
 import Matter from 'matter-js';
 import { GameEngine } from 'react-native-game-engine';
 
-// Import the level config
-import { level1Config } from '@/src/levels/level_1';
+// Import level manager functions
+import { getLevelConfig, getTotalLevels } from '@/src/levels/levelManager';
+import { LevelConfig } from '@/src/entities'; // Import LevelConfig type
 
 // Physics Setup (Step 2)
 import {
@@ -45,6 +46,7 @@ export default function GameScreen() {
     const [running, setRunning] = useState(true);
     const [entities, setEntities] = useState<BasicEntities | null>(null);
     const [gameKey, setGameKey] = useState(0);
+    const [currentLevel, setCurrentLevel] = useState(1);
     const gameEngineRef = useRef<GameEngine>(null);
 
     // Refs for physics objects
@@ -53,7 +55,7 @@ export default function GameScreen() {
 
     // State for UI Data
     const [uiData, setUiData] = useState({
-        fuel: level1Config.lander.initialFuel,
+        fuel: 0,
         altitude: 0,
         hVel: 0,
         vVel: 0,
@@ -66,37 +68,36 @@ export default function GameScreen() {
 
     // --- Game Setup/Restart Logic ---
     const setupGame = useCallback(() => {
-        console.log('Setting up / Restarting game using Level 1 config...');
+        console.log(`Setting up / Restarting game for Level ${currentLevel}...`);
 
-        // Load the current level config (hardcoded for now)
-        const levelConfig = level1Config;
+        // Load the current level config using the manager
+        const levelConfig = getLevelConfig(currentLevel);
+
+        if (!levelConfig) {
+            console.error(`Could not load config for level ${currentLevel}`);
+            setRunning(false);
+            return;
+        }
 
         // Always initialize a fresh physics instance.
         const physics = initializePhysics();
-        physicsRef.current = physics; // Store the new instance in the ref
+        physicsRef.current = physics;
         const { engine, world } = physics;
 
         // 1. (Physics already initialized above)
-
-        // Pre-calculate dimensions and landing pad info using level config
         const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
         const landingPadWidth = levelConfig.landingPad.width;
-
-        // --- Calculate Landing Pad Position using config --- START
         const landingPadX = screenWidth * levelConfig.landingPad.xPositionFactor;
-        // --- Calculate Landing Pad Position using config --- END
-
-        // Y position calculation needs landingPadHeight (use constant)
-        const landingPadY = screenHeight - 50 - (GAME_CONSTANTS.PAD_HEIGHT / 2); // Position relative to bottom margin
-        const landingPadTopY = landingPadY - (GAME_CONSTANTS.PAD_HEIGHT / 2); // Top surface Y
+        const landingPadY = screenHeight - 50 - (GAME_CONSTANTS.PAD_HEIGHT / 2);
+        const landingPadTopY = landingPadY - (GAME_CONSTANTS.PAD_HEIGHT / 2);
 
         // 2. Create Physics Bodies (using the new world)
         const originalTerrainVertices = generateTerrainVertices(
             screenWidth,
             screenHeight,
-            landingPadX, // Use randomized X
+            landingPadX,
             landingPadWidth,
-            landingPadTopY // Pass the calculated top Y
+            landingPadTopY
         );
         const landerBody = createLanderBody();
         const terrainBodies = createTerrainBodies(originalTerrainVertices);
@@ -109,24 +110,25 @@ export default function GameScreen() {
             landingPadBody,
         ]);
 
-        // 4. Create Initial Entities (using the new engine/world and level config)
+        // 4. Create Initial Entities
         const initialEntities = createInitialEntities(
-            engine, // Pass the new engine
-            world,  // Pass the new world
+            engine,
+            world,
             landerBody,
             terrainBodies,
             originalTerrainVertices,
             landingPadBody,
-            levelConfig // Pass the level config instead of GAME_CONSTANTS
+            levelConfig
         );
+        // Set the entities AFTER they are created
         setEntities(initialEntities);
         console.log('New entities created with fresh physics world and level config.');
 
-        // Reset Input State on setup/restart
+        // Reset Input State
         setIsThrusting(false);
         setLateralInput('none');
 
-        // Reset UI State & Running State using level config
+        // Reset UI State & Running State
         setUiData({
             fuel: levelConfig.lander.initialFuel,
             altitude: 0,
@@ -135,28 +137,66 @@ export default function GameScreen() {
             status: 'playing',
         });
         setRunning(true);
-        setGameKey(prevKey => prevKey + 1); // Increment key to force GameEngine remount
 
-    }, []); // useCallback with empty dependency array
+    }, [currentLevel]);
 
-    // --- Initial Setup Effect ---
+    // --- Level Advancement Logic ---
+    const handleNextLevel = useCallback(() => {
+        const totalLevels = getTotalLevels();
+        if (currentLevel < totalLevels) {
+            // Update level first
+            setCurrentLevel(prevLevel => prevLevel + 1);
+            // Then trigger remount via key
+            setGameKey(prevKey => prevKey + 1);
+        } else {
+            console.log('All levels completed!');
+            // Optionally reset:
+            // setCurrentLevel(1);
+            // setGameKey(prevKey => prevKey + 1);
+        }
+    }, [currentLevel]);
+
+    // --- Restart Current Level Logic ---
+    const handleRestart = useCallback(() => {
+        console.log(`Restarting Level ${currentLevel}...`);
+        // Trigger remount via key, setupGame will use the existing currentLevel
+        setGameKey(prevKey => prevKey + 1);
+    }, [currentLevel]);
+
+    // --- Initial Setup and Reset Effect (triggered by gameKey) ---
     useEffect(() => {
-        setupGame(); // Call setup on initial mount
+        console.log(`Effect triggered by gameKey change: ${gameKey}`);
+        // Explicitly clear entities to ensure GameEngine gets null initially on remount
+        setEntities(null);
+
+        // Use a minimal timeout to allow the state update and remount to process
+        // before setting up the new game state.
+        const timer = setTimeout(() => {
+            setupGame(); // Call setup AFTER clearing entities
+        }, 0); // Timeout 0 pushes execution to the next event loop tick
 
         // App State Handling (Pause/Resume)
         const handleAppStateChange = (nextAppState: any) => {
-            setRunning(nextAppState === 'active');
+            // Only set running based on app state if the game *should* be running
+            // (i.e. not already in a game over state managed by game logic)
+            if (uiData.status === 'playing') {
+                setRunning(nextAppState === 'active');
+            }
         };
         const subscription = AppState.addEventListener('change', handleAppStateChange);
 
         return () => {
+            clearTimeout(timer); // Clean up timer
             subscription.remove();
-            // Cleanup engine on unmount (already handled in setupGame on remount)
-             if (physicsRef.current?.engine) {
-                 Matter.Engine.clear(physicsRef.current.engine);
-             }
+            // Cleanup physics engine on unmount or before next setup
+            if (physicsRef.current?.engine) {
+                Matter.Engine.clear(physicsRef.current.engine);
+                physicsRef.current = null; // Clear the ref
+                console.log('Cleared physics engine.');
+            }
         };
-    }, [setupGame]); // Rerun if setupGame function identity changes (it shouldn't)
+        // This effect now ONLY depends on gameKey
+    }, [gameKey, setupGame]); // Include setupGame because it's called inside
 
     // --- Event Handling from Game Engine ---
     const handleEvent = useCallback((event: any) => {
@@ -251,11 +291,13 @@ export default function GameScreen() {
         }
     }
 
+    // Loading state handled by entities being null
     // Reverted loading state handling
     if (!entities) {
         return (
             <View style={styles.container}>
-                <Text style={styles.loadingText}>Loading...</Text>
+                <StaticStarfield />
+                <Text style={styles.loadingText}>Loading Level {currentLevel}...</Text>
             </View>
         );
     }
@@ -281,12 +323,15 @@ export default function GameScreen() {
                 status={uiData.status}
                 isThrusting={isThrusting}
                 lateralDirection={lateralInput}
+                currentLevel={currentLevel}
+                totalLevels={getTotalLevels()}
                 onStartThrust={handleStartThrust}
                 onStopThrust={handleStopThrust}
                 onStartMoveLeft={handleStartMoveLeft}
                 onStartMoveRight={handleStartMoveRight}
                 onStopMove={handleStopMove}
-                onRestart={setupGame}
+                onRestart={handleRestart}
+                onNextLevel={handleNextLevel}
             />
         </View>
     );

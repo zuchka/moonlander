@@ -11,6 +11,8 @@ interface UIOverlayProps {
     hVel: number;
     vVel: number;
     status: string;
+    currentLevel: number;
+    totalLevels: number;
     // Optional props for button styling
     isThrusting?: boolean;
     lateralDirection?: 'left' | 'right' | 'none';
@@ -21,6 +23,7 @@ interface UIOverlayProps {
     onStartMoveRight: () => void;
     onStopMove: () => void;
     onRestart: () => void;
+    onNextLevel: () => void;
 }
 
 const UIOverlay: React.FC<UIOverlayProps> = ({
@@ -29,6 +32,8 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     hVel,
     vVel,
     status,
+    currentLevel,
+    totalLevels,
     isThrusting,
     lateralDirection,
     onStartThrust,
@@ -37,6 +42,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     onStartMoveRight,
     onStopMove,
     onRestart,
+    onNextLevel,
 }) => {
 
     // Format displayed values
@@ -48,6 +54,10 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     else if (status === 'crashed-fuel') statusMessage = 'Out of Fuel!';
     else if (status.startsWith('crashed')) statusMessage = 'Crashed!';
 
+    const showNextLevelButton = status === 'landed' && currentLevel < totalLevels;
+    const showRestartButton = !showNextLevelButton;
+    const restartButtonText = status === 'landed' ? 'Replay Level' : 'Retry?';
+
     // Determine button styles based on state
     const thrustButtonStyle = isThrusting ? styles.buttonActive : styles.buttonInactive;
     const leftButtonStyle = lateralDirection === 'left' ? styles.buttonActive : styles.buttonInactive;
@@ -57,6 +67,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
         <View style={styles.overlayContainer} pointerEvents="box-none"> 
             {/* Info Display (Top Left) */}
             <View style={styles.infoContainer}>
+                <Text style={styles.infoText}>Level: {currentLevel}</Text>
                 <Text style={styles.infoText}>Fuel: {formatNumber(fuel)}</Text>
                 <Text style={styles.infoText}>Alt: {formatNumber(altitude)}</Text>
                 <Text style={styles.infoText}>HVel: {formatNumber(hVel)}</Text>
@@ -67,9 +78,16 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
             {isGameOver && (
                 <View style={styles.statusContainer}>
                     <Text style={styles.statusText}>{statusMessage}</Text>
-                    <TouchableOpacity onPress={onRestart} style={styles.restartButton}>
-                        <Text style={styles.restartText}>Restart</Text>
-                    </TouchableOpacity>
+                    {showNextLevelButton && (
+                        <TouchableOpacity onPress={onNextLevel} style={styles.restartButton}>
+                            <Text style={styles.restartText}>Next Level</Text>
+                        </TouchableOpacity>
+                    )}
+                    {showRestartButton && (
+                        <TouchableOpacity onPress={onRestart} style={styles.restartButton}>
+                            <Text style={styles.restartText}>{restartButtonText}</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             )}
 
