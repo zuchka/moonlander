@@ -21,6 +21,7 @@ import systems from '@/src/systems'; // The array of systems from src/systems/in
 
 // UI Component
 import UIOverlay from '@/src/components/UIOverlay'; // Import the UI component
+import StaticStarfield from '@/src/components/StaticStarfield'; // Import starfield
 
 // Define types for our refs/state - Ideally share these from entities/index.ts
 interface PhysicsHandles {
@@ -259,6 +260,7 @@ export default function GameScreen() {
 
     return (
         <View style={styles.container}>
+            <StaticStarfield />
             <GameEngine
                 key={gameKey}
                 ref={gameEngineRef}
