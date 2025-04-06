@@ -180,11 +180,27 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
                 // --- WEB LAYOUT (Bottom Bar with Neo Style) --- 
                 <View style={styles.webInfoWrapper}>
                     <View style={styles.webInfoContainer}> 
-                        <Text style={styles.webInfoText}>Level: {currentLevel}</Text>
-                        <Text style={styles.webInfoText}>Fuel: {formatNumber(fuel)}</Text>
-                        <Text style={styles.webInfoText}>Alt: {formatNumber(altitude)}</Text>
-                        <Text style={styles.webInfoText}>HVel: {formatNumber(hVel)}</Text>
-                        <Text style={styles.webInfoText}>VVel: {formatNumber(vVel)}</Text>
+                        {/* Refactored Web Stats */}
+                        <View style={styles.statItemWeb}>
+                            <Text style={styles.statLabelWeb}>Level:</Text>
+                            <Text style={styles.statValueWeb}>{currentLevel}</Text>
+                        </View>
+                        <View style={styles.statItemWeb}>
+                            <Text style={styles.statLabelWeb}>Fuel:</Text>
+                            <Text style={styles.statValueWeb}>{formatNumber(fuel)}</Text>
+                        </View>
+                        <View style={styles.statItemWeb}>
+                            <Text style={styles.statLabelWeb}>Alt:</Text>
+                            <Text style={styles.statValueWeb}>{formatNumber(altitude)}</Text>
+                        </View>
+                        <View style={styles.statItemWeb}>
+                            <Text style={styles.statLabelWeb}>HVel:</Text>
+                            <Text style={styles.statValueWeb}>{formatNumber(hVel)}</Text>
+                        </View>
+                        <View style={styles.statItemWeb}>
+                            <Text style={styles.statLabelWeb}>VVel:</Text>
+                            <Text style={styles.statValueWeb}>{formatNumber(vVel)}</Text>
+                        </View>
                     </View>
                     <View style={styles.webInfoShadow} />
                 </View>
@@ -192,11 +208,27 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
                 // --- MOBILE LAYOUT (Top-Left Card) --- 
                 <View style={styles.infoCardContainer}>
                     <View style={styles.infoCardContent}>
-                        <Text style={styles.infoText}>Level: {currentLevel}</Text>
-                        <Text style={styles.infoText}>Fuel: {formatNumber(fuel)}</Text>
-                        <Text style={styles.infoText}>Alt: {formatNumber(altitude)}</Text>
-                        <Text style={styles.infoText}>HVel: {formatNumber(hVel)}</Text>
-                        <Text style={styles.infoText}>VVel: {formatNumber(vVel)}</Text>
+                        {/* Refactored Mobile Stats */}
+                        <View style={styles.statItemMobile}>
+                            <Text style={styles.statLabelMobile}>Level:</Text>
+                            <Text style={styles.statValueMobile}>{currentLevel}</Text>
+                        </View>
+                        <View style={styles.statItemMobile}>
+                            <Text style={styles.statLabelMobile}>Fuel:</Text>
+                            <Text style={styles.statValueMobile}>{formatNumber(fuel)}</Text>
+                        </View>
+                        <View style={styles.statItemMobile}>
+                            <Text style={styles.statLabelMobile}>Alt:</Text>
+                            <Text style={styles.statValueMobile}>{formatNumber(altitude)}</Text>
+                        </View>
+                        <View style={styles.statItemMobile}>
+                            <Text style={styles.statLabelMobile}>HVel:</Text>
+                            <Text style={styles.statValueMobile}>{formatNumber(hVel)}</Text>
+                        </View>
+                         <View style={styles.statItemMobile}>
+                            <Text style={styles.statLabelMobile}>VVel:</Text>
+                            <Text style={styles.statValueMobile}>{formatNumber(vVel)}</Text>
+                        </View>
                     </View>
                     <View style={styles.infoCardShadow} />
                 </View>
@@ -296,7 +328,7 @@ const styles = StyleSheet.create({
         padding: 10,
         position: 'relative',
         zIndex: 2,
-        minWidth: 130,
+        minWidth: 130, // Keep min width for the card itself
     },
     infoCardShadow: {
         position: 'absolute',
@@ -311,24 +343,23 @@ const styles = StyleSheet.create({
     // --- Styles for WEB Bottom Bar Layout ---
     webInfoWrapper: { // New wrapper for positioning
         position: 'absolute',
-        bottom: 15, // Add some padding from the bottom edge
+        bottom: 15, 
         left: 15,
         right: 15,
         zIndex: 10,
-        // width: 'calc(100% - 30px)', // Alternative width calculation 
     },
     webInfoContainer: { // The visible content bar
-        backgroundColor: neoStyles.mainBg, // Use neo background
+        backgroundColor: neoStyles.mainBg, 
         borderWidth: neoStyles.borderWidth,
         borderColor: neoStyles.border,
         borderRadius: neoStyles.borderRadius,
-        flexDirection: 'row',
-        justifyContent: 'space-around', 
+        flexDirection: 'row', // Keep row layout for the bar
+        justifyContent: 'space-around', // Space out the stat items
         alignItems: 'center',
-        paddingVertical: 8, // Adjust padding
+        paddingVertical: 8, 
         paddingHorizontal: 15,
-        position: 'relative', // For zIndex
-        zIndex: 2, // Above shadow
+        position: 'relative', 
+        zIndex: 2, 
     },
     webInfoShadow: { // Shadow element for web bar
         position: 'absolute',
@@ -338,21 +369,48 @@ const styles = StyleSheet.create({
         bottom: -neoStyles.shadowOffset,
         backgroundColor: neoStyles.shadow,
         borderRadius: neoStyles.borderRadius,
-        zIndex: 1, // Below content
+        zIndex: 1, 
     },
-    // --- Text Styles ---
-    infoText: { // Used for Mobile Card
+
+    // --- NEW Stat Item Styles ---
+    statItemWeb: { // Container for each stat pair (Label + Value) on Web
+        flexDirection: 'row', // Arrange label and value horizontally
+        alignItems: 'baseline', // Align text nicely
+        marginHorizontal: 5, // Add some space between stat items
+    },
+    statLabelWeb: { // Style for the text label (e.g., "Fuel:") on Web
         color: neoStyles.text,
         fontSize: 14,
-        marginBottom: 3,
+        fontWeight: '600',
+        marginRight: 4, // Space between label and value
+    },
+    statValueWeb: { // Style for the numeric value on Web
+        color: neoStyles.text,
+        fontSize: 14,
+        fontWeight: '600',
+        fontFamily: 'monospace', // <<<< Apply Monospaced Font
+        minWidth: 50, // <<<< Add minimum width to stabilize
+        textAlign: 'right', // <<<< Align numbers to the right
+    },
+    statItemMobile: { // Container for each stat pair (Label + Value) on Mobile
+        flexDirection: 'row',
+        justifyContent: 'space-between', // Space out label and value within the card row
+        marginBottom: 4, // Space between stat rows
+        alignItems: 'baseline',
+    },
+    statLabelMobile: { // Style for the text label on Mobile
+        color: neoStyles.text,
+        fontSize: 14,
         fontWeight: '600',
     },
-    webInfoText: { // Used for Web Bottom Bar
-        color: neoStyles.text, // Use neo text color
-        fontSize: 14, // Adjust size to fit better
+    statValueMobile: { // Style for the numeric value on Mobile
+        color: neoStyles.text,
+        fontSize: 14,
         fontWeight: '600',
-        marginHorizontal: 5, // Adjust spacing
+        fontFamily: 'monospace', // <<<< Apply Monospaced Font
+        // minWidth might not be needed if justify-content works well
     },
+
     // --- Styles for Lives Card (Top Right) ---
     livesCardContainer: { // Wrapper for positioning lives card + shadow
         position: 'absolute',
@@ -366,7 +424,7 @@ const styles = StyleSheet.create({
         borderWidth: neoStyles.borderWidth,
         borderColor: neoStyles.border,
         borderRadius: neoStyles.borderRadius,
-        paddingVertical: 5,
+        paddingVertical: 5, // Adjust padding
         paddingHorizontal: 10,
         position: 'relative', // For zIndex
         zIndex: 2, // Above shadow
@@ -381,26 +439,26 @@ const styles = StyleSheet.create({
         borderRadius: neoStyles.borderRadius,
         zIndex: 1, // Below content
     },
-    // --- Other Styles --- 
-    statusCardContainer: { // Container for positioning the card + shadow
+    // --- Styles for Status Card (Center) ---
+    statusCardContainer: { 
         position: 'absolute',
-        top: '35%', // Adjust vertical position
-        width: '80%', // Card width
-        maxWidth: 350, // Max card width
-        alignSelf: 'center', // Center the container itself horizontally
-        zIndex: 5, // Ensure status is above game, below controls if necessary
+        top: '35%', 
+        width: '80%', 
+        maxWidth: 350, 
+        alignSelf: 'center', 
+        zIndex: 20, // Ensure status is above other UI elements
     },
-    statusCardContent: { // The actual visible card content
+    statusCardContent: { 
         backgroundColor: neoStyles.mainBg,
         borderWidth: neoStyles.borderWidth,
         borderColor: neoStyles.border,
         borderRadius: neoStyles.borderRadius,
-        padding: 20, // Similar to p-6
+        padding: 20, 
         alignItems: 'center',
-        zIndex: 2, // Content above shadow
-        position: 'relative', // Needed for zIndex
+        zIndex: 2, 
+        position: 'relative', 
     },
-    statusCardShadow: { // Separate view to mimic the offset shadow
+    statusCardShadow: { 
         position: 'absolute',
         top: neoStyles.shadowOffset,
         left: neoStyles.shadowOffset,
@@ -408,19 +466,16 @@ const styles = StyleSheet.create({
         bottom: -neoStyles.shadowOffset,
         backgroundColor: neoStyles.shadow,
         borderRadius: neoStyles.borderRadius,
-        zIndex: 1, // Shadow behind content
+        zIndex: 1, 
     },
     statusText: {
-        color: neoStyles.text, // Use neo color
-        fontSize: 22, // Adjust size
+        color: neoStyles.text, 
+        fontSize: 22, 
         fontWeight: 'bold',
         textAlign: 'center',
-        marginBottom: 20, // Increase spacing
-        // Remove text shadow if using card background
-        // textShadowColor: ...
+        marginBottom: 20, 
     },
     actionButton: {
-        // Apply neobrutalist button style
         backgroundColor: neoStyles.mainBg,
         borderWidth: neoStyles.borderWidth,
         borderColor: neoStyles.border,
@@ -428,40 +483,32 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         marginTop: 15,
-        // Add shadow properties (React Native standard shadow)
         shadowColor: neoStyles.shadow,
         shadowOffset: { width: neoStyles.shadowOffset / 2, height: neoStyles.shadowOffset / 2 },
-        shadowOpacity: 1, // Solid shadow
-        shadowRadius: 0, // Hard shadow edge
-        elevation: 3, // Basic elevation for Android shadow
-        // We can't easily replicate the exact translate+shadow-none effect on press
-        // A simple opacity change or background change might be better for RN
+        shadowOpacity: 1, 
+        shadowRadius: 0, 
+        elevation: 3, 
     },
     actionText: {
-        color: neoStyles.text, // Use neo color
-        fontSize: 16, // Adjust size
+        color: neoStyles.text, 
+        fontSize: 16, 
         fontWeight: 'bold',
         textAlign: 'center',
     },
+    // --- Styles for Mobile Controls (Bottom) ---
     controlsContainer: {
         position: 'absolute',
-        top: 0, // Take full overlay space
+        top: 0, 
         left: 0,
         right: 0,
         bottom: 0,
-        // Remove flex properties, buttons are absolutely positioned
-        // flexDirection: 'row',
-        // justifyContent: 'space-between',
-        // alignItems: 'flex-end',
-        // paddingHorizontal: 20,
-        // paddingBottom: 30, // Remove bottom padding
         zIndex: 10, // Ensure controls are on top
     },
     controlButton: {
-        position: 'absolute', // Use absolute positioning
-        width: 60, // Make slightly smaller
+        position: 'absolute', 
+        width: 60, 
         height: 60,
-        borderRadius: 30, // Adjust radius for circular shape (width / 2)
+        borderRadius: 30, 
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -470,34 +517,25 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
     buttonActive: {
-        backgroundColor: 'rgba(255, 255, 255, 0.5)', // Brighter when active
+        backgroundColor: 'rgba(255, 255, 255, 0.5)', 
     },
     controlText: {
         color: '#fff',
-        fontSize: 30, // Larger symbol
+        fontSize: 30, 
         fontWeight: 'bold',
     },
     thrustButton: {
-        // Position bottom left
         left: 30,
-        // top: SCREEN_HEIGHT / 2 - 35, // Center vertically (adjust for button height)
-        bottom: 30, // Position from bottom
+        bottom: 30, 
     },
     leftButton: {
-        // Position bottom right, left of the right button
-        right: 30 + 60 + 15, // Base padding + rightButton width (new) + spacing
-        // top: SCREEN_HEIGHT / 2 - 35, // Center vertically
-        bottom: 30, // Position from bottom
+        right: 30 + 60 + 15, 
+        bottom: 30, 
     },
     rightButton: {
-        // Position bottom right, rightmost button
-        right: 30, // Base padding from edge
-        // top: SCREEN_HEIGHT / 2 - 35, // Center vertically
-        bottom: 30, // Position from bottom
+        right: 30, 
+        bottom: 30, 
     },
-    // Remove buttonGroup and groupedButton styles if they exist (they weren't fully shown)
-    // buttonGroup: { ... },
-    // groupedButton: { ... },
 });
 
 export default UIOverlay; 
