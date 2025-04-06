@@ -164,18 +164,22 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     return (
         <View style={styles.overlayContainer} pointerEvents="box-none">
             
-            {/* Platform-Specific Info Display - Web section moved to bottom */}
+            {/* Platform-Specific Info Display */}
             {Platform.OS === 'web' ? (
-                // --- WEB LAYOUT (Now Bottom Bar) --- 
-                <View style={styles.webInfoContainer}>
-                    <Text style={styles.webInfoText}>Level: {currentLevel}</Text>
-                    <Text style={styles.webInfoText}>Fuel: {formatNumber(fuel)}</Text>
-                    <Text style={styles.webInfoText}>Alt: {formatNumber(altitude)}</Text>
-                    <Text style={styles.webInfoText}>HVel: {formatNumber(hVel)}</Text>
-                    <Text style={styles.webInfoText}>VVel: {formatNumber(vVel)}</Text>
+                // --- WEB LAYOUT (Bottom Bar with Neo Style) --- 
+                // Add wrapper for positioning content + shadow
+                <View style={styles.webInfoWrapper}>
+                    <View style={styles.webInfoContainer}> 
+                        <Text style={styles.webInfoText}>Level: {currentLevel}</Text>
+                        <Text style={styles.webInfoText}>Fuel: {formatNumber(fuel)}</Text>
+                        <Text style={styles.webInfoText}>Alt: {formatNumber(altitude)}</Text>
+                        <Text style={styles.webInfoText}>HVel: {formatNumber(hVel)}</Text>
+                        <Text style={styles.webInfoText}>VVel: {formatNumber(vVel)}</Text>
+                    </View>
+                    <View style={styles.webInfoShadow} />
                 </View>
             ) : (
-                // --- MOBILE LAYOUT (Top-Left Card) - Stays same ---
+                // --- MOBILE LAYOUT (Top-Left Card) --- 
                 <View style={styles.infoCardContainer}>
                     <View style={styles.infoCardContent}>
                         <Text style={styles.infoText}>Level: {currentLevel}</Text>
@@ -291,19 +295,36 @@ const styles = StyleSheet.create({
         zIndex: 1,
     },
     // --- Styles for WEB Bottom Bar Layout ---
-    webInfoContainer: {
+    webInfoWrapper: { // New wrapper for positioning
         position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        width: '100%',
+        bottom: 15, // Add some padding from the bottom edge
+        left: 15,
+        right: 15,
+        zIndex: 10,
+        // width: 'calc(100% - 30px)', // Alternative width calculation 
+    },
+    webInfoContainer: { // The visible content bar
+        backgroundColor: neoStyles.mainBg, // Use neo background
+        borderWidth: neoStyles.borderWidth,
+        borderColor: neoStyles.border,
+        borderRadius: neoStyles.borderRadius,
         flexDirection: 'row',
         justifyContent: 'space-around', 
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        zIndex: 10,
+        paddingVertical: 8, // Adjust padding
+        paddingHorizontal: 15,
+        position: 'relative', // For zIndex
+        zIndex: 2, // Above shadow
+    },
+    webInfoShadow: { // Shadow element for web bar
+        position: 'absolute',
+        top: neoStyles.shadowOffset,
+        left: neoStyles.shadowOffset,
+        right: -neoStyles.shadowOffset,
+        bottom: -neoStyles.shadowOffset,
+        backgroundColor: neoStyles.shadow,
+        borderRadius: neoStyles.borderRadius,
+        zIndex: 1, // Below content
     },
     // --- Text Styles ---
     infoText: { // Used for Mobile Card
@@ -313,10 +334,10 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     webInfoText: { // Used for Web Bottom Bar
-        color: '#FFFFFF', // White text for dark bar
-        fontSize: 16, // Slightly larger for web bottom bar
+        color: neoStyles.text, // Use neo text color
+        fontSize: 14, // Adjust size to fit better
         fontWeight: '600',
-        marginHorizontal: 10, // Add some horizontal spacing
+        marginHorizontal: 5, // Adjust spacing
     },
     // --- Other Styles --- 
     livesContainer: {
