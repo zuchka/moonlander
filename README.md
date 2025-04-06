@@ -1,50 +1,80 @@
-# Welcome to your Expo app 👋
+# Moon Lander RN
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+![image](https://github.com/user-attachments/assets/99e303e3-8d99-42ed-91fa-813e46e29201)
 
-## Get started
 
-1. Install dependencies
+A classic lunar lander game built with React Native and Expo.
 
-   ```bash
-   npm install
-   ```
+## Goal
 
-2. Start the app
+Pilot your lunar module safely onto the designated landing pads on the moon's surface. Manage your fuel, control your descent speed, and maintain a proper angle to achieve a successful landing. Watch out for rough terrain!
 
-   ```bash
+## Controls
+
+### Mobile (iOS / Android)
+
+*   **Main Thruster (Bottom Left):** Press and hold the bottom-left button (^) to apply upward thrust and slow your descent.
+*   **Rotation Thrusters (Bottom Right):**
+    *   Press and hold the left button (<) to rotate counter-clockwise.
+    *   Press and hold the right button (>) to rotate clockwise.
+    *   You can use the main thruster and a rotation thruster simultaneously.
+
+### Web / Keyboard
+
+*   **Up Arrow (`↑`):** Apply main thrust.
+*   **Left Arrow (`←`):** Rotate counter-clockwise.
+*   **Right Arrow (`→`):** Rotate clockwise.
+
+## Landing & Crashing
+
+*   **Successful Landing:** You must land on the flat landing pad with:
+    *   Vertical and horizontal speed below the level's limit.
+    *   Lander angle close to vertical (within the allowed range).
+*   **Crash Conditions:**
+    *   Landing too fast on the pad.
+    *   Landing on the pad with too much angle.
+    *   Hitting any other part of the terrain.
+    *   Running out of fuel before landing.
+
+## Lives & Game Over
+
+*   You start with 3 lives.
+*   Each crash costs one life.
+*   Losing all lives results in a Game Over.
+*   On the Game Over screen, you may have the option to watch a rewarded ad (if available) to gain 3 more lives and continue the current level.
+
+
+## Tips for Success
+
+*   Use short bursts of the main thruster to control your descent – don't burn fuel unnecessarily!
+*   Keep an eye on both your vertical speed (`VVel`) and horizontal speed (`HVel`).
+*   Make small rotational adjustments well before landing.
+*   Approach the landing pad slowly and maintain a near-vertical angle.
+
+---
+
+## Development Setup
+
+This is an [Expo](https://expo.dev) project.
+
+1.  **Install Dependencies**
+
+    ```bash
+    npm install
+    ```
+
+2.  **Start the Development Server**
+
+    ```bash
     npx expo start
-   ```
+    ```
 
-In the output, you'll find options to open the app in a
+    Follow the prompts to open the app in:
+    *   An iOS simulator (`i`)
+    *   An Android emulator (`a`)
+    *   A web browser (`w`)
+    *   A custom [development build](https://docs.expo.dev/develop/development-builds/introduction/) on your device (scan the QR code after building with EAS).
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Happy Landing!
