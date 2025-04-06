@@ -208,11 +208,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
                 // --- MOBILE LAYOUT (Top-Left Card) --- 
                 <View style={styles.infoCardContainer}>
                     <View style={styles.infoCardContent}>
-                        {/* Refactored Mobile Stats */}
-                        <View style={styles.statItemMobile}>
-                            <Text style={styles.statLabelMobile}>Level:</Text>
-                            <Text style={styles.statValueMobile}>{currentLevel}</Text>
-                        </View>
+                        {/* Level stat item REMOVED from here */}
                         <View style={styles.statItemMobile}>
                             <Text style={styles.statLabelMobile}>Fuel:</Text>
                             <Text style={styles.statValueMobile}>{formatNumber(fuel)}</Text>
@@ -234,13 +230,22 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
                 </View>
             )}
 
-            {/* Lives Display (Top Right) - Apply Card Style */}
+            {/* Lives Display (Top Right) - Apply Card Style - Add Level for Mobile */}
             <View style={styles.livesCardContainer}>
-                 {/* This View now gets the content styling */}
                  <View style={styles.livesCardContent}> 
-                     {typeof lives === 'number' && lives > 0 && Array.from({ length: lives }).map((_, index) => (
-                         <LanderIcon key={index} size={18} />
-                     ))}
+                     {/* <<< Add Level Stat Here (Only Rendered on Mobile via Platform check) >>> */} 
+                     {Platform.OS !== 'web' && (
+                        <View style={[styles.statItemMobile, styles.levelInLivesCard]}> 
+                            <Text style={styles.statLabelMobile}>Level:</Text>
+                            <Text style={styles.statValueMobile}>{currentLevel}</Text>
+                        </View>
+                     )}
+                     {/* <<< Wrap Icons in a Row >>> */} 
+                     <View style={styles.iconRow}> 
+                         {typeof lives === 'number' && lives > 0 && Array.from({ length: lives }).map((_, index) => (
+                             <LanderIcon key={index} size={18} />
+                         ))}
+                     </View>
                  </View>
                  <View style={styles.livesCardShadow} />
             </View>
@@ -325,10 +330,11 @@ const styles = StyleSheet.create({
         borderWidth: neoStyles.borderWidth,
         borderColor: neoStyles.border,
         borderRadius: neoStyles.borderRadius,
-        padding: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 8,
         position: 'relative',
         zIndex: 2,
-        minWidth: 130, // Keep min width for the card itself
+        width: 85,
     },
     infoCardShadow: {
         position: 'absolute',
@@ -348,13 +354,13 @@ const styles = StyleSheet.create({
         right: 15,
         zIndex: 10,
     },
-    webInfoContainer: { // The visible content bar
+    webInfoContainer: { 
         backgroundColor: neoStyles.mainBg, 
         borderWidth: neoStyles.borderWidth,
         borderColor: neoStyles.border,
         borderRadius: neoStyles.borderRadius,
-        flexDirection: 'row', // Keep row layout for the bar
-        justifyContent: 'space-around', // Space out the stat items
+        flexDirection: 'row', 
+        justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 8, 
         paddingHorizontal: 15,
@@ -393,22 +399,20 @@ const styles = StyleSheet.create({
         textAlign: 'right', // <<<< Align numbers to the right
     },
     statItemMobile: { // Container for each stat pair (Label + Value) on Mobile
-        flexDirection: 'row',
-        justifyContent: 'space-between', // Space out label and value within the card row
-        marginBottom: 4, // Space between stat rows
-        alignItems: 'baseline',
+        alignItems: 'flex-start',
+        marginBottom: 6,
     },
     statLabelMobile: { // Style for the text label on Mobile
         color: neoStyles.text,
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
+        marginBottom: 2,
     },
     statValueMobile: { // Style for the numeric value on Mobile
         color: neoStyles.text,
         fontSize: 14,
         fontWeight: '600',
-        fontFamily: 'monospace', // <<<< Apply Monospaced Font
-        // minWidth might not be needed if justify-content works well
+        fontFamily: 'monospace',
     },
 
     // --- Styles for Lives Card (Top Right) ---
@@ -418,16 +422,18 @@ const styles = StyleSheet.create({
         right: 20,
         zIndex: 10,
     },
-    livesCardContent: { // The visible lives card content area
-        flexDirection: 'row', 
-        backgroundColor: neoStyles.mainBg, // Use neo styles
+    livesCardContent: { 
+        // flexDirection: 'row', // <<< Remove row direction
+        alignItems: 'center', // <<< Center items horizontally
+        backgroundColor: neoStyles.mainBg,
         borderWidth: neoStyles.borderWidth,
         borderColor: neoStyles.border,
         borderRadius: neoStyles.borderRadius,
-        paddingVertical: 5, // Adjust padding
-        paddingHorizontal: 10,
-        position: 'relative', // For zIndex
-        zIndex: 2, // Above shadow
+        paddingVertical: 8, // <<< Adjust padding
+        paddingHorizontal: 12, // <<< Adjust padding
+        position: 'relative', 
+        zIndex: 2, 
+        minWidth: 60, // Ensure minimum width for content
     },
     livesCardShadow: { // Shadow for lives card
         position: 'absolute',
@@ -438,6 +444,15 @@ const styles = StyleSheet.create({
         backgroundColor: neoStyles.shadow,
         borderRadius: neoStyles.borderRadius,
         zIndex: 1, // Below content
+    },
+    levelInLivesCard: { // Specific style for the level stat when inside the lives card
+        marginBottom: 6, // Add space below the level stat
+        alignSelf: 'stretch', // Make the level row take full width for centering text
+        alignItems: 'center', // Center label/value if needed, adjust as preferred
+    },
+    iconRow: { // Style for the row containing icons
+        flexDirection: 'row', 
+        // marginTop: 4, // Add space above the icon row (already handled by level marginBottom)
     },
     // --- Styles for Status Card (Center) ---
     statusCardContainer: { 
