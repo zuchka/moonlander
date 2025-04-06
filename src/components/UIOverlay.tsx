@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import Svg, { Polygon, Rect, G } from 'react-native-svg'; // Import SVG components
+import LunarModuleLineartSvg from './LunarModuleLineartSvg'; // Adjust path if needed
 
 // Get screen dimensions for positioning
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -33,46 +34,17 @@ interface UIOverlayProps {
     onNewGame: () => void; // Add callback for new game
 }
 
-// --- Reusable Lander Icon Component --- START
-interface LanderIconProps {
-    size: number;
-}
-
-const LanderIcon: React.FC<LanderIconProps> = ({ size }) => {
-    const width = size;
-    const height = size;
-
-    // Simplified relative dimensions from Lander.tsx
-    const bodyWidth = width * 0.7;
-    const bodyHeight = height * 0.5;
-    const ascentStageHeight = height * 0.3;
-    const ascentStageWidth = width * 0.4;
-    const legSpread = width * 0.45;
-    const legTopAttach = bodyHeight * 0.3;
-    const nozzleHeight = height * 0.15;
-    const nozzleWidth = width * 0.2;
-    const nozzleBottomY = (height + bodyHeight) / 2 + nozzleHeight;
-    const ascentStageX = (width - ascentStageWidth) / 2;
-    const ascentStageY = (height - bodyHeight) / 2 - ascentStageHeight;
-
-    // Simplified geometry - adjust Y offsets slightly for icon clarity if needed
-    const bodyY = (height - bodyHeight) / 2;
-    const legsY = bodyY + legTopAttach;
-    const nozzleY = (height + bodyHeight) / 2;
-
-    return (
-        <Svg width={width} height={height * 1.1} viewBox={`0 0 ${width} ${height * 1.1}`}>
-            <G>
-                <Rect x={(width - bodyWidth) / 2} y={bodyY} width={bodyWidth} height={bodyHeight} fill="#BDBDBD" />
-                <Rect x={ascentStageX} y={ascentStageY} width={ascentStageWidth} height={ascentStageHeight} fill="#E0E0E0" />
-                <Polygon points={`${width / 2 - nozzleWidth / 2},${nozzleY} ${width / 2 + nozzleWidth / 2},${nozzleY} ${width / 2},${nozzleY + nozzleHeight}`} fill="#616161" />
-                <Polygon points={`${width / 2 - bodyWidth / 2},${legsY} ${width / 2 - legSpread},${height} ${width / 2 - legSpread + 5},${height}`} fill="#9E9E9E" />
-                <Polygon points={`${width / 2 + bodyWidth / 2},${legsY} ${width / 2 + legSpread},${height} ${width / 2 + legSpread - 5},${height}`} fill="#9E9E9E" />
-            </G>
-        </Svg>
-    );
+// --- Neobrutalist Style Constants (Example)
+const neoStyles = {
+    mainBg: '#FFFFFF',      // Card/Button Background
+    border: '#111827',    // Dark border
+    shadow: '#111827',    // Dark shadow
+    text: '#111827',      // Default text
+    accent: '#3B82F6',    // Example accent for primary button?
+    shadowOffset: 4,       // Offset for the shadow effect
+    borderRadius: 8,       // Consistent border radius
+    borderWidth: 2,
 };
-// --- Reusable Lander Icon Component --- END
 
 const UIOverlay: React.FC<UIOverlayProps> = ({
     fuel,
@@ -144,13 +116,13 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     const showNewGameButton = isFinalGameOver;
     const restartButtonText = status === 'landed' ? 'Replay Level' : 'Retry?';
 
-    // Determine button styles based on state
+    // Determine button styles based on state (for the controls, not action buttons yet)
     const thrustButtonStyle = isThrusting ? styles.buttonActive : styles.buttonInactive;
     const leftButtonStyle = lateralDirection === 'left' ? styles.buttonActive : styles.buttonInactive;
     const rightButtonStyle = lateralDirection === 'right' ? styles.buttonActive : styles.buttonInactive;
 
     return (
-        <View style={styles.overlayContainer} pointerEvents="box-none"> 
+        <View style={styles.overlayContainer} pointerEvents="box-none">
             {/* Info Display (Top Left) */}
             <View style={styles.infoContainer}>
                 <Text style={styles.infoText}>Level: {currentLevel}</Text>
@@ -162,31 +134,43 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
 
             {/* Lives Display (Top Right) */}
             <View style={styles.livesContainer}>
-                {/* Render LanderIcon components based on lives count, with check */}
+                {/* Render LunarModuleLineartSvg components based on lives count */}
                 {typeof lives === 'number' && lives > 0 && Array.from({ length: lives }).map((_, index) => (
-                    <LanderIcon key={index} size={18} />
+                    // Replace LanderIcon with LunarModuleLineartSvg
+                    <LunarModuleLineartSvg 
+                        key={index} 
+                        width={18} // Keep similar size to old icon
+                        height={18 * 1.2} // Maintain aspect ratio (approx)
+                        strokeColor="#FFFFFF" // Use white lines for visibility
+                        strokeWidth={1} // Adjust stroke width for small size if needed
+                    />
                 ))}
             </View>
 
-            {/* Game Status Display (Top Center) */}
+            {/* Game Status Display (Top Center) - Apply Card Style */}
             {isGameOver && (
-                <View style={styles.statusContainer}>
-                    <Text style={styles.statusText}>{statusMessage}</Text>
-                    {showNextLevelButton && (
-                        <TouchableOpacity onPress={onNextLevel} style={styles.actionButton}>
-                            <Text style={styles.actionText}>Next Level</Text>
-                        </TouchableOpacity>
-                    )}
-                    {showRestartButton && (
-                        <TouchableOpacity onPress={onRestart} style={styles.actionButton}>
-                            <Text style={styles.actionText}>{restartButtonText}</Text>
-                        </TouchableOpacity>
-                    )}
-                    {showNewGameButton && (
-                        <TouchableOpacity onPress={onNewGame} style={styles.actionButton}>
-                            <Text style={styles.actionText}>New Game</Text>
-                        </TouchableOpacity>
-                    )}
+                <View style={styles.statusCardContainer}> 
+                    <View style={styles.statusCardContent}>
+                        <Text style={styles.statusText}>{statusMessage}</Text>
+                        {/* Action Buttons - Apply Button Style */} 
+                        {showNextLevelButton && (
+                            <TouchableOpacity onPress={onNextLevel} style={styles.actionButton}>
+                                <Text style={styles.actionText}>Next Level</Text>
+                            </TouchableOpacity>
+                        )}
+                        {showRestartButton && (
+                            <TouchableOpacity onPress={onRestart} style={styles.actionButton}>
+                                <Text style={styles.actionText}>{restartButtonText}</Text>
+                            </TouchableOpacity>
+                        )}
+                        {showNewGameButton && (
+                            <TouchableOpacity onPress={onNewGame} style={styles.actionButton}>
+                                <Text style={styles.actionText}>New Game</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                    {/* Shadow element for neobrutalist effect */} 
+                    <View style={styles.statusCardShadow} />
                 </View>
             )}
 
@@ -230,8 +214,8 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        // Ensure it doesn't capture touches unless a child does
-        // pointerEvents: 'box-none', // Already set on the View
+        // Add alignItems: 'center' to allow alignSelf to work on children
+        // but this centers everything... let's try alignSelf on the child first.
     },
     infoContainer: {
         position: 'absolute',
@@ -240,6 +224,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
         padding: 10,
         borderRadius: 5,
+        zIndex: 10, // Ensure info is above potential card shadow
     },
     livesContainer: {
         position: 'absolute',
@@ -250,40 +235,73 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         paddingHorizontal: 10,
         borderRadius: 5,
+        zIndex: 10, // Ensure lives are above potential card shadow
     },
     infoText: {
         color: '#fff',
         fontSize: 14,
         marginBottom: 3,
     },
-    statusContainer: {
+    statusCardContainer: { // Container for positioning the card + shadow
         position: 'absolute',
-        top: '40%', // Position higher up
-        left: 0,
-        right: 0,
+        top: '35%', // Adjust vertical position
+        width: '80%', // Card width
+        maxWidth: 350, // Max card width
+        alignSelf: 'center', // Center the container itself horizontally
+        zIndex: 5, // Ensure status is above game, below controls if necessary
+    },
+    statusCardContent: { // The actual visible card content
+        backgroundColor: neoStyles.mainBg,
+        borderWidth: neoStyles.borderWidth,
+        borderColor: neoStyles.border,
+        borderRadius: neoStyles.borderRadius,
+        padding: 20, // Similar to p-6
         alignItems: 'center',
+        zIndex: 2, // Content above shadow
+        position: 'relative', // Needed for zIndex
+    },
+    statusCardShadow: { // Separate view to mimic the offset shadow
+        position: 'absolute',
+        top: neoStyles.shadowOffset,
+        left: neoStyles.shadowOffset,
+        right: -neoStyles.shadowOffset,
+        bottom: -neoStyles.shadowOffset,
+        backgroundColor: neoStyles.shadow,
+        borderRadius: neoStyles.borderRadius,
+        zIndex: 1, // Shadow behind content
     },
     statusText: {
-        color: 'yellow',
-        fontSize: 24,
+        color: neoStyles.text, // Use neo color
+        fontSize: 22, // Adjust size
         fontWeight: 'bold',
         textAlign: 'center',
-        marginBottom: 15,
-        textShadowColor: 'rgba(0, 0, 0, 0.75)',
-        textShadowOffset: {width: -1, height: 1},
-        textShadowRadius: 10
+        marginBottom: 20, // Increase spacing
+        // Remove text shadow if using card background
+        // textShadowColor: ...
     },
     actionButton: {
-        backgroundColor: 'rgba(100, 100, 255, 0.8)',
+        // Apply neobrutalist button style
+        backgroundColor: neoStyles.mainBg,
+        borderWidth: neoStyles.borderWidth,
+        borderColor: neoStyles.border,
+        borderRadius: neoStyles.borderRadius,
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadius: 8,
-        marginTop: 10, // Space between message and button, or buttons
+        marginTop: 15,
+        // Add shadow properties (React Native standard shadow)
+        shadowColor: neoStyles.shadow,
+        shadowOffset: { width: neoStyles.shadowOffset / 2, height: neoStyles.shadowOffset / 2 },
+        shadowOpacity: 1, // Solid shadow
+        shadowRadius: 0, // Hard shadow edge
+        elevation: 3, // Basic elevation for Android shadow
+        // We can't easily replicate the exact translate+shadow-none effect on press
+        // A simple opacity change or background change might be better for RN
     },
     actionText: {
-        color: '#fff',
-        fontSize: 18,
+        color: neoStyles.text, // Use neo color
+        fontSize: 16, // Adjust size
         fontWeight: 'bold',
+        textAlign: 'center',
     },
     controlsContainer: {
         position: 'absolute',
@@ -297,6 +315,7 @@ const styles = StyleSheet.create({
         // alignItems: 'flex-end',
         // paddingHorizontal: 20,
         // paddingBottom: 30, // Remove bottom padding
+        zIndex: 10, // Ensure controls are on top
     },
     controlButton: {
         position: 'absolute', // Use absolute positioning
