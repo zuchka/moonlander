@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import Svg, { Polygon, Rect, G } from 'react-native-svg'; // Import SVG components
 
 // Get screen dimensions for positioning
@@ -190,30 +190,44 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
                 </View>
             )}
 
-            {/* Controls (Bottom) - Only active if game is playing */}
-            {!isGameOver && (
-                 <View style={styles.controlsContainer} pointerEvents="box-none"> 
-                    <TouchableOpacity
-                        style={[styles.controlButton, styles.leftButton, leftButtonStyle]}
-                        onPressIn={onStartMoveLeft}
-                        onPressOut={onStopMove}
-                    >
-                        <Text style={styles.controlText}>{'<'}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.controlButton, styles.thrustButton, thrustButtonStyle]}
-                        onPressIn={onStartThrust}
-                        onPressOut={onStopThrust}
-                    >
-                        <Text style={styles.controlText}>^</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.controlButton, styles.rightButton, rightButtonStyle]}
-                        onPressIn={onStartMoveRight}
-                        onPressOut={onStopMove}
-                    >
-                        <Text style={styles.controlText}>{'>'}</Text>
-                    </TouchableOpacity>
+            {/* Controls (Bottom) - Only active if game is playing and not on web */}
+            {!isGameOver && Platform.OS !== 'web' && (
+                 <View style={styles.controlsContainer} pointerEvents="box-none">
+                    {/* Left Group */}
+                    <View style={styles.buttonGroup}>
+                        <TouchableOpacity
+                            style={[styles.controlButton, styles.leftButton, leftButtonStyle]}
+                            onPressIn={onStartMoveLeft}
+                            onPressOut={onStopMove}
+                        >
+                            <Text style={styles.controlText}>{'<'}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.controlButton, styles.thrustButton, thrustButtonStyle, styles.groupedButton]} // Add spacing style
+                            onPressIn={onStartThrust}
+                            onPressOut={onStopThrust}
+                        >
+                            <Text style={styles.controlText}>^</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                     {/* Right Group */}
+                     <View style={styles.buttonGroup}>
+                        <TouchableOpacity
+                            style={[styles.controlButton, styles.thrustButton, thrustButtonStyle, styles.groupedButton]} // Add spacing style
+                            onPressIn={onStartThrust}
+                            onPressOut={onStopThrust}
+                        >
+                            <Text style={styles.controlText}>^</Text>
+                        </TouchableOpacity>
+                         <TouchableOpacity
+                             style={[styles.controlButton, styles.rightButton, rightButtonStyle]}
+                             onPressIn={onStartMoveRight}
+                             onPressOut={onStopMove}
+                         >
+                             <Text style={styles.controlText}>{'>'}</Text>
+                         </TouchableOpacity>
+                    </View>
                 </View>
             )}
         </View>
@@ -287,9 +301,13 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'space-between', // Change to space-between
         paddingHorizontal: 30,
         // backgroundColor: 'rgba(255, 0, 0, 0.1)', // Debug layout
+    },
+    buttonGroup: { // New style for grouping buttons
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     controlButton: {
         backgroundColor: 'rgba(255, 255, 255, 0.5)',
@@ -298,6 +316,10 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    groupedButton: { // New style for spacing within a group
+        marginLeft: 15, // Adjust spacing as needed for left group's thrust
+        marginRight: 15, // Adjust spacing as needed for right group's thrust
     },
     controlText: {
         color: 'black',
