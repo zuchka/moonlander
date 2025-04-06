@@ -40,7 +40,7 @@ const LandingPad: React.FC<LandingPadProps> = ({ body, size, testID, rectTestID 
                 y="0"
                 width={width}
                 height={height}
-                fill="mediumseagreen" // Example color
+                fill="lime" // Changed color to bright green
             />
         </Svg>
     );

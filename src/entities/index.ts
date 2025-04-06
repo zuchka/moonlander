@@ -56,6 +56,8 @@ interface GameState {
     camera: { x: number; y: number }; // Example camera state
     crashSpeed?: number;
     crashSpeedLimit?: number;
+    isTumbling: boolean;
+    tumbleTorqueApplied: boolean;
 }
 
 // Define the overall entities structure type
@@ -103,56 +105,53 @@ const createInitialEntities = (
     const LANDER_HEIGHT = 40;
     const PAD_HEIGHT = 10;
 
+    // Define base entities EXCEPT landingPad
     const initialEntities: Partial<Entities> = {
         physics: { engine, world },
         lander: {
             body: landerBody,
-            size: [LANDER_WIDTH, LANDER_HEIGHT], // Use hardcoded const
-            renderer: Lander, // Restore original renderer
-        },
-        landingPad: {
-            body: landingPadBody,
-            size: [levelConfig.landingPad.width, PAD_HEIGHT], // Use levelConfig width, hardcoded height
-            renderer: LandingPad, // Restore original renderer
+            size: [LANDER_WIDTH, LANDER_HEIGHT],
+            renderer: Lander,
         },
         gameState: {
             engine: engine,
             world: world,
             status: 'playing',
-            fuel: levelConfig.lander.initialFuel, // Use fuel from levelConfig
+            fuel: levelConfig.lander.initialFuel,
             maxLandingSpeed: levelConfig.lander.maxLandingSpeed,
             inputState: {
                 thrusting: false,
                 lateral: 'none',
             },
             camera: { x: screenWidth / 2, y: screenHeight / 2 },
+            isTumbling: false,
+            tumbleTorqueApplied: false,
         },
     };
 
-    // Dynamically add terrain entities
+    // Dynamically add terrain entities FIRST
     terrainBodies.forEach((body, index) => {
         const originalVertices = terrainVertices[index];
-
         if (!originalVertices) {
             console.warn(`Missing original vertices for terrain body index ${index}`);
-            return; // Skip if data is inconsistent
+            return;
         }
-        
-        // --- DEBUG: Log TerrainSegment before assigning ---
-        if(index === 0) { // Only log for the first terrain segment
-            console.log(`  Assigning TerrainSegment: typeof=${typeof TerrainSegment}, value=${TerrainSegment}`);
-        }
-        // --- END DEBUG ---
-
+        // ... debug log ...
         initialEntities[`terrain${index + 1}`] = {
             body: body,
-            vertices: originalVertices, // Store the original vertices
-            renderer: TerrainSegment, // Restore original renderer
+            vertices: originalVertices,
+            renderer: TerrainSegment,
         };
     });
 
-    // We perform a type assertion here because we've programmatically built
-    // the object to conform to the Entities interface.
+    // Add landingPad entity AFTER terrain entities
+    initialEntities.landingPad = {
+        body: landingPadBody,
+        size: [levelConfig.landingPad.width, PAD_HEIGHT],
+        renderer: LandingPad,
+    };
+
+    // Assert and return
     const entities = initialEntities as Entities;
     return entities;
 };
