@@ -323,32 +323,35 @@ export default function GameScreen() {
     const handleEvent = useCallback((event: any) => {
         if (event.type === 'ui-update') {
             const newStatus = event.payload.status;
-            const previousStatus = uiData.status; // Capture status before update
+            const previousStatus = uiData.status; 
+            setUiData(event.payload); 
 
-            // Update UI data first
-            setUiData(event.payload);
-
-            // Check for transition to a crash state
+            // Check for transition to any crash state
             if (previousStatus === 'playing' && newStatus.startsWith('crashed')) {
                 console.log(`Crash detected with status: ${newStatus}. Lives left: ${lives}`);
-                if (lives > 0) {
+                
+                // Handle lives deduction
+                if (lives > 0) { 
                     const newLives = lives - 1;
                     setLives(newLives);
                     console.log(`Lives decremented to: ${newLives}`);
                     if (newLives === 0) {
                         console.log('Final life lost. Setting final game over.');
                         setIsFinalGameOver(true);
+                        // Optional: Stop engine ONLY on final game over
+                        // setRunning(false); 
                     }
                 }
-                // Stop the engine for any crash
-                setRunning(false);
+                // REMOVED: Stop the engine for any crash
+                // setRunning(false); 
+
             } else if (newStatus === 'landed') {
-                // Stop the engine on successful landing
-                 console.log(`Landed detected. Status: ${newStatus}`);
-                setRunning(false);
+                console.log(`Landed detected. Status: ${newStatus}`);
+                // Stop engine on successful landing
+                setRunning(false); 
             }
         }
-    }, [uiData.status, lives]); // Add lives to dependency array
+    }, [uiData.status, lives]);
 
     // --- Action Handlers for UI Controls (Now update state) ---
     const handleStartThrust = useCallback(() => setIsThrusting(true), []);

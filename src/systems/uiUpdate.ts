@@ -63,23 +63,25 @@ const UISystem = (entities: Entities, { dispatch }: any) => {
     // Calculate other UI values
     const fuel = gameState.fuel;
     const status = gameState.status;
-    const hVel = landerBody.velocity.x;
-    const vVel = landerBody.velocity.y;
     const landerAngle = landerBody.angle;
+
+    // Conditionally get velocity based on game status
+    const isPlaying = status === 'playing';
+    const hVel = isPlaying ? landerBody.velocity.x : null;
+    const vVel = isPlaying ? landerBody.velocity.y : null;
 
     // Dispatch the UI update event
     dispatch({
         type: 'ui-update',
         payload: {
             fuel,
-            altitude, // Use the new calculated altitude
-            hVel,
-            vVel,
+            altitude, 
+            hVel, // Will be null if not playing
+            vVel, // Will be null if not playing
             status,
-            // Pass crash details if they exist
             crashSpeed: gameState.crashSpeed,
             crashSpeedLimit: gameState.crashSpeedLimit,
-            landerX, // Keep sending these if needed elsewhere
+            landerX, 
             landerY,
             landerAngle
         }

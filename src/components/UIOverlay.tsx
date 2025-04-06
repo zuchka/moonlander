@@ -117,8 +117,13 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     onNewGame, // Add callback
 }) => {
 
-    // Format displayed values
-    const formatNumber = (num: number) => num.toFixed(2);
+    // Format displayed values, handling null for velocities
+    const formatNumber = (num: number | null | undefined, placeholder = '--') => {
+        if (num === null || typeof num === 'undefined') {
+            return placeholder;
+        }
+        return num.toFixed(2);
+    };
 
     const isGameOver = status !== 'playing';
     let statusMessage = '';
@@ -173,7 +178,6 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
             {/* Platform-Specific Info Display */}
             {Platform.OS === 'web' ? (
                 // --- WEB LAYOUT (Bottom Bar with Neo Style) --- 
-                // Add wrapper for positioning content + shadow
                 <View style={styles.webInfoWrapper}>
                     <View style={styles.webInfoContainer}> 
                         <Text style={styles.webInfoText}>Level: {currentLevel}</Text>

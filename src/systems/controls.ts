@@ -23,15 +23,19 @@ const ControlSystem = (entities: any) => {
 
     const landerBody = lander.body;
 
-    // --- Angle Lock --- (Keep lander upright)
-    Matter.Body.setAngle(landerBody, 0);
-    Matter.Body.setAngularVelocity(landerBody, 0);
+    // --- Angle Lock --- (REMOVED)
+    // Matter.Body.setAngle(landerBody, 0);
+    // Matter.Body.setAngularVelocity(landerBody, 0);
 
     // --- Vertical Thrust --- (Check fuel and consume)
     const { thrusting, lateral } = gameState.inputState;
     if (thrusting && gameState.fuel > 0) {
-        const angleRad = landerBody.angle; // Still 0 due to lock
-        const force = { x: 0, y: -THRUST_FORCE_MAGNITUDE }; // Simplified force as angle=0
+        // Thrust should now respect angle
+        const angleRad = landerBody.angle; 
+        const force = {
+             x: Math.sin(angleRad) * THRUST_FORCE_MAGNITUDE, 
+             y: -Math.cos(angleRad) * THRUST_FORCE_MAGNITUDE 
+        }; 
         Matter.Body.applyForce(landerBody, landerBody.position, force);
 
         gameState.fuel -= FUEL_CONSUMPTION_RATE;
@@ -42,18 +46,17 @@ const ControlSystem = (entities: any) => {
 
     // --- Lateral Movement --- (Check fuel, apply force, consume fuel)
     let lateralForceX = 0;
+    // Lateral controls might need rethinking without angle lock.
+    // For now, apply force horizontally relative to the world.
     if (lateral === 'left') {
         lateralForceX = -LATERAL_FORCE_MAGNITUDE;
     } else if (lateral === 'right') {
         lateralForceX = LATERAL_FORCE_MAGNITUDE;
     }
 
-    // Only apply lateral force AND consume fuel if direction is non-zero AND fuel is available
     if (lateralForceX !== 0 && gameState.fuel > 0) {
-        // Apply Force
         Matter.Body.applyForce(landerBody, landerBody.position, { x: lateralForceX, y: 0 });
-
-        // Consume Lateral Fuel
+        // ... fuel consumption ...
         gameState.fuel -= LATERAL_FUEL_CONSUMPTION_RATE;
         if (gameState.fuel < 0) {
             gameState.fuel = 0;
