@@ -69,9 +69,10 @@ export default function GameScreen() {
         crashSpeedLimit: undefined as number | undefined,
     });
 
-    // State for Player Input Actions
+    // State for Player Input Actions (Modified)
     const [isThrusting, setIsThrusting] = useState(false);
-    const [lateralInput, setLateralInput] = useState<'left' | 'right' | 'none'>('none');
+    const [isLeftThrusterActive, setIsLeftThrusterActive] = useState(false); // <<< New state
+    const [isRightThrusterActive, setIsRightThrusterActive] = useState(false); // <<< New state
 
     // --- Game Setup/Restart Logic ---
     const setupGame = useCallback(() => {
@@ -230,7 +231,8 @@ export default function GameScreen() {
 
         // Reset Input State
         setIsThrusting(false);
-        setLateralInput('none');
+        setIsLeftThrusterActive(false);
+        setIsRightThrusterActive(false);
 
         // Reset UI State & Running State
         setUiData({
@@ -353,80 +355,64 @@ export default function GameScreen() {
         }
     }, [uiData.status, lives]);
 
-    // --- Action Handlers for UI Controls (Now update state) ---
+    // --- Action Handlers for UI Controls (Modified) ---
     const handleStartThrust = useCallback(() => setIsThrusting(true), []);
     const handleStopThrust = useCallback(() => setIsThrusting(false), []);
-    const handleStartMoveLeft = useCallback(() => setLateralInput('left'), []);
-    const handleStartMoveRight = useCallback(() => setLateralInput('right'), []);
-    const handleStopMove = useCallback(() => setLateralInput('none'), []);
+    
+    // New individual handlers for lateral thrusters
+    const handleStartMoveLeft = useCallback(() => setIsLeftThrusterActive(true), []);
+    const handleStopMoveLeft = useCallback(() => setIsLeftThrusterActive(false), []);
+    const handleStartMoveRight = useCallback(() => setIsRightThrusterActive(true), []);
+    const handleStopMoveRight = useCallback(() => setIsRightThrusterActive(false), []);
 
-    // --- Keyboard Event Handling --- (New Section)
+    // --- Keyboard Event Handling (Modified) ---
     useEffect(() => {
-        // Only add keyboard listeners on web platforms
-        if (Platform.OS !== 'web') {
-            return;
-        }
+        if (Platform.OS !== 'web') return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.repeat) return; // Ignore repeated events from holding key down
-
+            if (e.repeat) return;
             switch (e.key) {
-                case 'ArrowUp':
-                    handleStartThrust();
-                    break;
-                case 'ArrowLeft':
-                    handleStartMoveLeft();
-                    break;
-                case 'ArrowRight':
-                    handleStartMoveRight();
-                    break;
+                case 'ArrowUp': handleStartThrust(); break;
+                case 'ArrowLeft': handleStartMoveLeft(); break; // Use new handler
+                case 'ArrowRight': handleStartMoveRight(); break; // Use new handler
             }
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
             switch (e.key) {
-                case 'ArrowUp':
-                    handleStopThrust();
-                    break;
-                case 'ArrowLeft':
-                    // Only stop if moving left was the last input
-                    if (lateralInput === 'left') {
-                       handleStopMove();
-                    }
-                    break;
-                case 'ArrowRight':
-                    // Only stop if moving right was the last input
-                    if (lateralInput === 'right') {
-                       handleStopMove();
-                    }
-                    break;
+                case 'ArrowUp': handleStopThrust(); break;
+                case 'ArrowLeft': handleStopMoveLeft(); break; // Use new handler
+                case 'ArrowRight': handleStopMoveRight(); break; // Use new handler
             }
         };
-
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
-
-        // Cleanup function
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-        // Re-run if handlers change identity (they shouldn't with useCallback)
-        // Also include lateralInput to ensure keyup logic uses latest state
-    }, [handleStartThrust, handleStopThrust, handleStartMoveLeft, handleStartMoveRight, handleStopMove, lateralInput]);
+    }, [handleStartThrust, handleStopThrust, handleStartMoveLeft, handleStopMoveLeft, handleStartMoveRight, handleStopMoveRight]);
 
-    // --- Prepare Entities for Current Frame ---
+    // --- Prepare Entities for Current Frame (Modified) ---
     const currentFrameEntities = entities ? { ...entities } : null;
     if (currentFrameEntities) {
+        // Determine lateral input based on independent states
+        let lateral: 'left' | 'right' | 'none' = 'none';
+        if (isLeftThrusterActive && !isRightThrusterActive) {
+            lateral = 'left';
+        } else if (isRightThrusterActive && !isLeftThrusterActive) {
+            lateral = 'right';
+        } // If both are active, lateral remains 'none' (no net lateral thrust)
+        
         // Update input state for ControlSystem
         if (currentFrameEntities.gameState?.inputState) {
             currentFrameEntities.gameState.inputState.thrusting = isThrusting;
-            currentFrameEntities.gameState.inputState.lateral = lateralInput;
+            currentFrameEntities.gameState.inputState.lateral = lateral; // Use derived lateral value
         }
         // Update lander entity for Renderer
         if (currentFrameEntities.lander) {
             currentFrameEntities.lander.isThrusting = isThrusting;
-            currentFrameEntities.lander.lateralDirection = lateralInput;
+            currentFrameEntities.lander.lateralDirection = lateral; // Use derived lateral value
         }
     }
 
@@ -464,14 +450,14 @@ export default function GameScreen() {
                 lives={lives}
                 isFinalGameOver={isFinalGameOver}
                 isThrusting={isThrusting}
-                lateralDirection={lateralInput}
-                currentLevel={currentLevel}
-                totalLevels={getTotalLevels()}
+                isLeftThrusterActive={isLeftThrusterActive}
+                isRightThrusterActive={isRightThrusterActive}
                 onStartThrust={handleStartThrust}
                 onStopThrust={handleStopThrust}
                 onStartMoveLeft={handleStartMoveLeft}
+                onStopMoveLeft={handleStopMoveLeft}
                 onStartMoveRight={handleStartMoveRight}
-                onStopMove={handleStopMove}
+                onStopMoveRight={handleStopMoveRight}
                 onRestart={handleRestart}
                 onNextLevel={handleNextLevel}
                 onNewGame={handleNewGame}

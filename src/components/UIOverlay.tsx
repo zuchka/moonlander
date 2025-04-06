@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, Pressable } from 'react-native';
+import React, { useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, Pressable, GestureResponderEvent } from 'react-native';
 import Svg, { Polygon, Rect, G } from 'react-native-svg'; // Import SVG components
 
 // Get screen dimensions for positioning
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Define the props the component expects
-interface UIOverlayProps {
+// Define the props the component expects (Modified)
+export interface UIOverlayProps {
     fuel: number;
     altitude: number;
     hVel: number;
@@ -19,18 +19,22 @@ interface UIOverlayProps {
     // Add props for lives system
     lives: number;
     isFinalGameOver: boolean;
-    // Optional props for button styling
+    // Thruster states
     isThrusting?: boolean;
-    lateralDirection?: 'left' | 'right' | 'none';
+    isLeftThrusterActive?: boolean;
+    isRightThrusterActive?: boolean;
     // Action callbacks
     onStartThrust: () => void;
     onStopThrust: () => void;
     onStartMoveLeft: () => void;
+    onStopMoveLeft: () => void;
     onStartMoveRight: () => void;
-    onStopMove: () => void;
+    onStopMoveRight: () => void;
     onRestart: () => void;
     onNextLevel: () => void;
-    onNewGame: () => void; // Add callback for new game
+    onNewGame: () => void;
+    canShowRewardedAd?: boolean;
+    onShowRewardedAd?: () => void;
 }
 
 // --- Neobrutalist Style Constants (Example)
@@ -106,15 +110,19 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     lives,
     isFinalGameOver,
     isThrusting,
-    lateralDirection,
+    isLeftThrusterActive,
+    isRightThrusterActive,
     onStartThrust,
     onStopThrust,
     onStartMoveLeft,
+    onStopMoveLeft,
     onStartMoveRight,
-    onStopMove,
+    onStopMoveRight,
     onRestart,
     onNextLevel,
-    onNewGame, // Add callback
+    onNewGame,
+    canShowRewardedAd,
+    onShowRewardedAd,
 }) => {
 
     // Format displayed values, handling null for velocities
@@ -167,10 +175,112 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     const showNewGameButton = isFinalGameOver;
     const restartButtonText = status === 'landed' ? 'Replay Level' : 'Retry?';
 
-    // Determine button styles based on state (for the controls, not action buttons yet)
+    // Determine button styles based on state (Modified)
     const thrustButtonStyle = isThrusting ? styles.buttonActive : styles.buttonInactive;
-    const leftButtonStyle = lateralDirection === 'left' ? styles.buttonActive : styles.buttonInactive;
-    const rightButtonStyle = lateralDirection === 'right' ? styles.buttonActive : styles.buttonInactive;
+    const leftButtonStyle = isLeftThrusterActive ? styles.buttonActive : styles.buttonInactive;
+    const rightButtonStyle = isRightThrusterActive ? styles.buttonActive : styles.buttonInactive;
+
+    // --- Direct Touch Handling Logic (Mobile) ---
+    const controlsAreaRef = useRef<View>(null);
+
+    // Define button areas based on styles (Corrected Calculation)
+    const controlsAreaHeight = styles.controlsArea.height ?? 120; // Get height from style
+    const buttonWidth = styles.controlButton.width ?? 60;
+    const buttonHeight = styles.controlButton.height ?? 60;
+    
+    // Get positioning from styles, providing defaults
+    const thrustBottom = styles.thrustButton.bottom ?? 30;
+    const thrustLeft = styles.thrustButton.left ?? 30;
+    const rightButtonBottom = styles.rightButton.bottom ?? 30;
+    const rightButtonRight = styles.rightButton.right ?? 30;
+    const leftButtonBottom = styles.leftButton.bottom ?? 30;
+    const leftButtonRight = styles.leftButton.right ?? (rightButtonRight + buttonWidth + 15);
+
+    const thrustArea = { 
+        x1: thrustLeft, 
+        y1: controlsAreaHeight - thrustBottom - buttonHeight, // Relative to controlsArea top 
+        x2: thrustLeft + buttonWidth,
+        y2: controlsAreaHeight - thrustBottom // Relative to controlsArea top
+    };
+    const rightArea = { 
+        x1: SCREEN_WIDTH - rightButtonRight - buttonWidth, // Relative to screen/controlsArea left
+        y1: controlsAreaHeight - rightButtonBottom - buttonHeight, 
+        x2: SCREEN_WIDTH - rightButtonRight, // Relative to screen/controlsArea left
+        y2: controlsAreaHeight - rightButtonBottom 
+    };
+    const leftArea = { 
+        x1: SCREEN_WIDTH - leftButtonRight - buttonWidth, 
+        y1: controlsAreaHeight - leftButtonBottom - buttonHeight, 
+        x2: SCREEN_WIDTH - leftButtonRight,
+        y2: controlsAreaHeight - leftButtonBottom 
+    };
+
+    const checkTouches = useCallback((event: GestureResponderEvent) => {
+        const touches = event.nativeEvent.touches;
+        let isTouchingThrust = false;
+        let isTouchingLeft = false;
+        let isTouchingRight = false;
+
+        // Add console log for debugging touches and areas
+        // console.log('--- Touch Event ---');
+        // console.log('Areas:', JSON.stringify({ thrustArea, leftArea, rightArea }));
+
+        for (let i = 0; i < touches.length; i++) {
+            const touch = touches[i];
+            const { locationX: x, locationY: y } = touch;
+            
+            // Log touch coordinates
+            // console.log(`Touch ${i}: x=${x.toFixed(1)}, y=${y.toFixed(1)}`);
+
+            // Check Thrust Area
+            if (x >= thrustArea.x1 && x <= thrustArea.x2 && y >= thrustArea.y1 && y <= thrustArea.y2) {
+                isTouchingThrust = true;
+                // console.log(` -> Hit THRUST area`);
+            }
+            // Check Left Area
+            if (x >= leftArea.x1 && x <= leftArea.x2 && y >= leftArea.y1 && y <= leftArea.y2) {
+                isTouchingLeft = true;
+                // console.log(` -> Hit LEFT area`);
+            }
+            // Check Right Area
+            if (x >= rightArea.x1 && x <= rightArea.x2 && y >= rightArea.y1 && y <= rightArea.y2) {
+                isTouchingRight = true;
+                // console.log(` -> Hit RIGHT area`);
+            }
+        }
+        
+        // console.log(`Result: Thrust=${isTouchingThrust}, Left=${isTouchingLeft}, Right=${isTouchingRight}`);
+        // console.log(`Current State: Thrust=${isThrusting}, Left=${isLeftThrusterActive}, Right=${isRightThrusterActive}`);
+
+        // Update state based on current touches
+        if (isTouchingThrust !== isThrusting) {
+            // console.log(` -> Toggling Thrust: ${isTouchingThrust}`);
+            isTouchingThrust ? onStartThrust() : onStopThrust();
+        }
+        if (isTouchingLeft !== isLeftThrusterActive) {
+            // console.log(` -> Toggling Left: ${isTouchingLeft}`);
+            isTouchingLeft ? onStartMoveLeft() : onStopMoveLeft();
+        }
+        if (isTouchingRight !== isRightThrusterActive) {
+            // console.log(` -> Toggling Right: ${isTouchingRight}`);
+            isTouchingRight ? onStartMoveRight() : onStopMoveRight();
+        }
+
+    }, [
+        isThrusting, isLeftThrusterActive, isRightThrusterActive, 
+        onStartThrust, onStopThrust, onStartMoveLeft, onStopMoveLeft, 
+        onStartMoveRight, onStopMoveRight,
+        thrustArea, leftArea, rightArea // Include areas in dependencies
+    ]);
+
+    const handleTouchStart = (event: GestureResponderEvent) => {
+        checkTouches(event);
+    };
+
+    const handleTouchEnd = (event: GestureResponderEvent) => {
+        checkTouches(event); // Re-check remaining touches
+    };
+    // --- End Direct Touch Handling Logic ---
 
     return (
         <View style={styles.overlayContainer} pointerEvents="box-none">
@@ -277,34 +387,28 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
                 </View>
             )}
 
-            {/* Controls (Bottom) - Only active if game is playing and not on web */}
+            {/* Controls (Bottom) - Use Direct Touch Handling on Mobile */}
             {!isGameOver && Platform.OS !== 'web' && (
-                 <View style={styles.controlsContainer} pointerEvents="box-none">
-                    {/* Left/Rotation Thruster (Now on the right, stacked) */}
-                     <TouchableOpacity
-                         style={[styles.controlButton, styles.leftButton, leftButtonStyle]}
-                         onPressIn={onStartMoveLeft}
-                         onPressOut={onStopMove}
-                     >
-                         <Text style={styles.controlText}>{'<'}</Text>
-                     </TouchableOpacity>
-                     <TouchableOpacity
-                         style={[styles.controlButton, styles.rightButton, rightButtonStyle]}
-                         onPressIn={onStartMoveRight}
-                         onPressOut={onStopMove}
-                     >
-                         <Text style={styles.controlText}>{'>'}</Text>
-                     </TouchableOpacity>
-
-                    {/* Main Thruster (Now on the left) */}
-                    <TouchableOpacity
-                        style={[styles.controlButton, styles.thrustButton, thrustButtonStyle]}
-                        onPressIn={onStartThrust}
-                        onPressOut={onStopThrust}
-                    >
-                        <Text style={styles.controlText}>^</Text>
-                    </TouchableOpacity>
-                </View>
+                 <View 
+                     ref={controlsAreaRef}
+                     style={styles.controlsArea} // New container for touch handling
+                     onTouchStart={handleTouchStart}
+                     onTouchMove={handleTouchStart} // Handle move same as start to catch dragging onto button
+                     onTouchEnd={handleTouchEnd}
+                     onTouchCancel={handleTouchEnd} // Handle cancellation same as end
+                     pointerEvents="box-only" // Capture touches only on this view
+                 >
+                     {/* Visual Representation of Buttons (Not Touchable) */}
+                      <View style={[styles.controlButton, styles.leftButton, leftButtonStyle]} pointerEvents="none">
+                          <Text style={styles.controlText}>{'<'}</Text>
+                      </View>
+                      <View style={[styles.controlButton, styles.rightButton, rightButtonStyle]} pointerEvents="none">
+                          <Text style={styles.controlText}>{'>'}</Text>
+                      </View>
+                      <View style={[styles.controlButton, styles.thrustButton, thrustButtonStyle]} pointerEvents="none">
+                          <Text style={styles.controlText}>^</Text>
+                      </View>
+                 </View>
             )}
         </View>
     );
@@ -550,6 +654,15 @@ const styles = StyleSheet.create({
     rightButton: {
         right: 30, 
         bottom: 30, 
+    },
+    controlsArea: { // New style for mobile touch handling area
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 120, // Adjust height to cover button areas comfortably
+        // backgroundColor: 'rgba(255, 0, 0, 0.1)', // Optional: for debugging touch area
+        zIndex: 10, // Ensure it's high enough but check relative to status overlay
     },
 });
 
