@@ -429,7 +429,10 @@ export default function GameScreen() {
 
     return (
         <View style={styles.container}>
-             {/* Render GameEngine and UI first */}
+             {/* Render Starfield first as background */}
+             <StaticStarfield /> 
+
+             {/* Render GameEngine second */}
              <GameEngine
                 key={gameKey}
                 ref={gameEngineRef}
@@ -439,6 +442,8 @@ export default function GameScreen() {
                 running={running}
                 onEvent={handleEvent}
             />
+
+            {/* Render UIOverlay last (on top) */}
             <UIOverlay
                 fuel={uiData.fuel}
                 altitude={uiData.altitude}
@@ -463,9 +468,9 @@ export default function GameScreen() {
                 onRestart={handleRestart}
                 onNextLevel={handleNextLevel}
                 onNewGame={handleNewGame}
+                // canShowRewardedAd={rewardedAd.loaded} // Assuming ads removed/commented out for now
+                // onShowRewardedAd={handleShowRewardedAd} 
             />
-            {/* Render Starfield last so it potentially draws over the black background */}
-            <StaticStarfield />
         </View>
     );
 }
