@@ -430,21 +430,21 @@ export default function GameScreen() {
         }
     }
 
-    // Loading state handled by entities being null
-    // Reverted loading state handling
+    // --- Rendering --- 
     if (!entities) {
         return (
             <View style={styles.container}>
-                <StaticStarfield />
+                {/* Render Starfield last in loading view */}
                 <Text style={styles.loadingText}>Loading Level {currentLevel}...</Text>
+                <StaticStarfield />
             </View>
         );
     }
 
     return (
         <View style={styles.container}>
-            <StaticStarfield />
-            <GameEngine
+             {/* Render GameEngine and UI first */}
+             <GameEngine
                 key={gameKey}
                 ref={gameEngineRef}
                 style={styles.gameContainer}
@@ -453,7 +453,6 @@ export default function GameScreen() {
                 running={running}
                 onEvent={handleEvent}
             />
-
             <UIOverlay
                 fuel={uiData.fuel}
                 altitude={uiData.altitude}
@@ -477,6 +476,8 @@ export default function GameScreen() {
                 onNextLevel={handleNextLevel}
                 onNewGame={handleNewGame}
             />
+            {/* Render Starfield last so it potentially draws over the black background */}
+            <StaticStarfield />
         </View>
     );
 }

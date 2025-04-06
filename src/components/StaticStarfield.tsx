@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+import { Dimensions, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 const NUM_STARS = 250; // Adjust number of stars as needed for performance/look
 const MAX_STAR_SIZE = 2.0;
@@ -10,7 +8,7 @@ const MIN_STAR_OPACITY = 0.3;
 const MAX_STAR_OPACITY = 1.0;
 
 // Generate stars with random positions, sizes, and opacity
-const generateStars = () => {
+const generateStars = (screenWidth: number, screenHeight: number) => {
   const stars = [];
   for (let i = 0; i < NUM_STARS; i++) {
     const size = Math.random() * (MAX_STAR_SIZE - MIN_STAR_SIZE) + MIN_STAR_SIZE;
@@ -27,8 +25,11 @@ const generateStars = () => {
 };
 
 const StaticStarfield: React.FC = () => {
-  // Memoize stars so they don't regenerate on every render
-  const stars = useMemo(() => generateStars(), []);
+  // Get dimensions using the hook
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
+  // Memoize stars based on dimensions
+  const stars = useMemo(() => generateStars(screenWidth, screenHeight), [screenWidth, screenHeight]);
 
   return (
     <View style={styles.container} pointerEvents="none">
@@ -55,7 +56,6 @@ const StaticStarfield: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject, // Fill parent completely
-    zIndex: -1, // Ensure it's behind other content
   },
   star: {
     position: 'absolute',
