@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, Pressable } from 'react-native';
 import Svg, { Polygon, Rect, G } from 'react-native-svg'; // Import SVG components
-import LunarModuleLineartSvg from './LunarModuleLineartSvg'; // Adjust path if needed
 
 // Get screen dimensions for positioning
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -45,6 +44,47 @@ const neoStyles = {
     borderRadius: 8,       // Consistent border radius
     borderWidth: 2,
 };
+
+// --- RE-ADD Original Lander Icon Component --- START
+interface LanderIconProps {
+    size: number;
+}
+
+const LanderIcon: React.FC<LanderIconProps> = ({ size }) => {
+    const width = size;
+    const height = size;
+
+    // Simplified relative dimensions from Lander.tsx
+    const bodyWidth = width * 0.7;
+    const bodyHeight = height * 0.5;
+    const ascentStageHeight = height * 0.3;
+    const ascentStageWidth = width * 0.4;
+    const legSpread = width * 0.45;
+    const legTopAttach = bodyHeight * 0.3;
+    const nozzleHeight = height * 0.15;
+    const nozzleWidth = width * 0.2;
+    const nozzleBottomY = (height + bodyHeight) / 2 + nozzleHeight;
+    const ascentStageX = (width - ascentStageWidth) / 2;
+    const ascentStageY = (height - bodyHeight) / 2 - ascentStageHeight;
+
+    // Simplified geometry - adjust Y offsets slightly for icon clarity if needed
+    const bodyY = (height - bodyHeight) / 2;
+    const legsY = bodyY + legTopAttach;
+    const nozzleY = (height + bodyHeight) / 2;
+
+    return (
+        <Svg width={width} height={height * 1.1} viewBox={`0 0 ${width} ${height * 1.1}`}>
+            <G>
+                <Rect x={(width - bodyWidth) / 2} y={bodyY} width={bodyWidth} height={bodyHeight} fill="#BDBDBD" />
+                <Rect x={ascentStageX} y={ascentStageY} width={ascentStageWidth} height={ascentStageHeight} fill="#E0E0E0" />
+                <Polygon points={`${width / 2 - nozzleWidth / 2},${nozzleY} ${width / 2 + nozzleWidth / 2},${nozzleY} ${width / 2},${nozzleY + nozzleHeight}`} fill="#616161" />
+                <Polygon points={`${width / 2 - bodyWidth / 2},${legsY} ${width / 2 - legSpread},${height} ${width / 2 - legSpread + 5},${height}`} fill="#9E9E9E" />
+                <Polygon points={`${width / 2 + bodyWidth / 2},${legsY} ${width / 2 + legSpread},${height} ${width / 2 + legSpread - 5},${height}`} fill="#9E9E9E" />
+            </G>
+        </Svg>
+    );
+};
+// --- RE-ADD Original Lander Icon Component --- END
 
 const UIOverlay: React.FC<UIOverlayProps> = ({
     fuel,
@@ -137,16 +177,9 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
 
             {/* Lives Display (Top Right) */}
             <View style={styles.livesContainer}>
-                {/* Render LunarModuleLineartSvg components based on lives count */}
+                {/* Revert back to using LanderIcon */}
                 {typeof lives === 'number' && lives > 0 && Array.from({ length: lives }).map((_, index) => (
-                    // Replace LanderIcon with LunarModuleLineartSvg
-                    <LunarModuleLineartSvg 
-                        key={index} 
-                        width={18} // Keep similar size to old icon
-                        height={18 * 1.2} // Maintain aspect ratio (approx)
-                        strokeColor="#FFFFFF" // Use white lines for visibility
-                        strokeWidth={1} // Adjust stroke width for small size if needed
-                    />
+                     <LanderIcon key={index} size={18} />
                 ))}
             </View>
 
