@@ -72,14 +72,20 @@ const LanderIcon: React.FC<LanderIconProps> = ({ size }) => {
     const legsY = bodyY + legTopAttach;
     const nozzleY = (height + bodyHeight) / 2;
 
+    // Use darker fill colors
+    const bodyFill = "#616161"; // Darker Grey
+    const ascentFill = "#757575"; // Medium-Dark Grey
+    const nozzleFill = "#424242"; // Very Dark Grey
+    const legFill = "#757575"; // Medium-Dark Grey
+
     return (
         <Svg width={width} height={height * 1.1} viewBox={`0 0 ${width} ${height * 1.1}`}>
             <G>
-                <Rect x={(width - bodyWidth) / 2} y={bodyY} width={bodyWidth} height={bodyHeight} fill="#BDBDBD" />
-                <Rect x={ascentStageX} y={ascentStageY} width={ascentStageWidth} height={ascentStageHeight} fill="#E0E0E0" />
-                <Polygon points={`${width / 2 - nozzleWidth / 2},${nozzleY} ${width / 2 + nozzleWidth / 2},${nozzleY} ${width / 2},${nozzleY + nozzleHeight}`} fill="#616161" />
-                <Polygon points={`${width / 2 - bodyWidth / 2},${legsY} ${width / 2 - legSpread},${height} ${width / 2 - legSpread + 5},${height}`} fill="#9E9E9E" />
-                <Polygon points={`${width / 2 + bodyWidth / 2},${legsY} ${width / 2 + legSpread},${height} ${width / 2 + legSpread - 5},${height}`} fill="#9E9E9E" />
+                <Rect x={(width - bodyWidth) / 2} y={bodyY} width={bodyWidth} height={bodyHeight} fill={bodyFill} />
+                <Rect x={ascentStageX} y={ascentStageY} width={ascentStageWidth} height={ascentStageHeight} fill={ascentFill} />
+                <Polygon points={`${width / 2 - nozzleWidth / 2},${nozzleY} ${width / 2 + nozzleWidth / 2},${nozzleY} ${width / 2},${nozzleY + nozzleHeight}`} fill={nozzleFill} />
+                <Polygon points={`${width / 2 - bodyWidth / 2},${legsY} ${width / 2 - legSpread},${height} ${width / 2 - legSpread + 5},${height}`} fill={legFill} />
+                <Polygon points={`${width / 2 + bodyWidth / 2},${legsY} ${width / 2 + legSpread},${height} ${width / 2 + legSpread - 5},${height}`} fill={legFill} />
             </G>
         </Svg>
     );
@@ -192,11 +198,15 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
                 </View>
             )}
 
-            {/* Lives Display (Top Right) - Consistent top position */}
-            <View style={styles.livesContainer}>
-                {typeof lives === 'number' && lives > 0 && Array.from({ length: lives }).map((_, index) => (
-                     <LanderIcon key={index} size={18} />
-                ))}
+            {/* Lives Display (Top Right) - Apply Card Style */}
+            <View style={styles.livesCardContainer}>
+                 {/* This View now gets the content styling */}
+                 <View style={styles.livesCardContent}> 
+                     {typeof lives === 'number' && lives > 0 && Array.from({ length: lives }).map((_, index) => (
+                         <LanderIcon key={index} size={18} />
+                     ))}
+                 </View>
+                 <View style={styles.livesCardShadow} />
             </View>
 
             {/* Game Status Display (Top Center) - Apply Card Style */}
@@ -339,17 +349,35 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginHorizontal: 5, // Adjust spacing
     },
-    // --- Other Styles --- 
-    livesContainer: {
+    // --- Styles for Lives Card (Top Right) ---
+    livesCardContainer: { // Wrapper for positioning lives card + shadow
         position: 'absolute',
-        top: 50,
+        top: 50, 
         right: 20,
-        flexDirection: 'row',
-        paddingVertical: 5,
-        paddingHorizontal: 10,
-        borderRadius: 5,
         zIndex: 10,
     },
+    livesCardContent: { // The visible lives card content area
+        flexDirection: 'row', 
+        backgroundColor: neoStyles.mainBg, // Use neo styles
+        borderWidth: neoStyles.borderWidth,
+        borderColor: neoStyles.border,
+        borderRadius: neoStyles.borderRadius,
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        position: 'relative', // For zIndex
+        zIndex: 2, // Above shadow
+    },
+    livesCardShadow: { // Shadow for lives card
+        position: 'absolute',
+        top: neoStyles.shadowOffset,
+        left: neoStyles.shadowOffset,
+        right: -neoStyles.shadowOffset,
+        bottom: -neoStyles.shadowOffset,
+        backgroundColor: neoStyles.shadow,
+        borderRadius: neoStyles.borderRadius,
+        zIndex: 1, // Below content
+    },
+    // --- Other Styles --- 
     statusCardContainer: { // Container for positioning the card + shadow
         position: 'absolute',
         top: '35%', // Adjust vertical position
