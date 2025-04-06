@@ -106,7 +106,6 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
     crashSpeedLimit,
     currentLevel,
     totalLevels,
-    // Add new props
     lives,
     isFinalGameOver,
     isThrusting,

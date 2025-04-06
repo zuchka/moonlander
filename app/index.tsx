@@ -452,6 +452,8 @@ export default function GameScreen() {
                 isThrusting={isThrusting}
                 isLeftThrusterActive={isLeftThrusterActive}
                 isRightThrusterActive={isRightThrusterActive}
+                currentLevel={currentLevel}
+                totalLevels={getTotalLevels()}
                 onStartThrust={handleStartThrust}
                 onStopThrust={handleStopThrust}
                 onStartMoveLeft={handleStartMoveLeft}
