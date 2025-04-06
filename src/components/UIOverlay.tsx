@@ -123,13 +123,16 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
 
     return (
         <View style={styles.overlayContainer} pointerEvents="box-none">
-            {/* Info Display (Top Left) */}
-            <View style={styles.infoContainer}>
-                <Text style={styles.infoText}>Level: {currentLevel}</Text>
-                <Text style={styles.infoText}>Fuel: {formatNumber(fuel)}</Text>
-                <Text style={styles.infoText}>Alt: {formatNumber(altitude)}</Text>
-                <Text style={styles.infoText}>HVel: {formatNumber(hVel)}</Text>
-                <Text style={styles.infoText}>VVel: {formatNumber(vVel)}</Text>
+            {/* Info Display (Top Left) - Apply Card Style */}
+            <View style={styles.infoCardContainer}>
+                <View style={styles.infoCardContent}>
+                    <Text style={styles.infoText}>Level: {currentLevel}</Text>
+                    <Text style={styles.infoText}>Fuel: {formatNumber(fuel)}</Text>
+                    <Text style={styles.infoText}>Alt: {formatNumber(altitude)}</Text>
+                    <Text style={styles.infoText}>HVel: {formatNumber(hVel)}</Text>
+                    <Text style={styles.infoText}>VVel: {formatNumber(vVel)}</Text>
+                </View>
+                <View style={styles.infoCardShadow} />
             </View>
 
             {/* Lives Display (Top Right) */}
@@ -217,14 +220,31 @@ const styles = StyleSheet.create({
         // Add alignItems: 'center' to allow alignSelf to work on children
         // but this centers everything... let's try alignSelf on the child first.
     },
-    infoContainer: {
+    infoCardContainer: { // New container for positioning info card + shadow
         position: 'absolute',
         top: 50, // Adjust as needed
         left: 20,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        zIndex: 10,
+    },
+    infoCardContent: { // Style for the visible info content card
+        backgroundColor: neoStyles.mainBg,
+        borderWidth: neoStyles.borderWidth,
+        borderColor: neoStyles.border,
+        borderRadius: neoStyles.borderRadius,
         padding: 10,
-        borderRadius: 5,
-        zIndex: 10, // Ensure info is above potential card shadow
+        position: 'relative', // For zIndex context
+        zIndex: 2,
+        minWidth: 130,
+    },
+    infoCardShadow: { // Shadow element for info card
+        position: 'absolute',
+        top: neoStyles.shadowOffset,
+        left: neoStyles.shadowOffset,
+        right: -neoStyles.shadowOffset, // Extend shadow to the right
+        bottom: -neoStyles.shadowOffset, // Extend shadow down
+        backgroundColor: neoStyles.shadow,
+        borderRadius: neoStyles.borderRadius,
+        zIndex: 1,
     },
     livesContainer: {
         position: 'absolute',
@@ -238,9 +258,10 @@ const styles = StyleSheet.create({
         zIndex: 10, // Ensure lives are above potential card shadow
     },
     infoText: {
-        color: '#fff',
+        color: neoStyles.text, // Use neo text color
         fontSize: 14,
         marginBottom: 3,
+        fontWeight: '600', // Add fontWeight for boldness
     },
     statusCardContainer: { // Container for positioning the card + shadow
         position: 'absolute',
