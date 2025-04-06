@@ -163,21 +163,33 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
 
     return (
         <View style={styles.overlayContainer} pointerEvents="box-none">
-            {/* Info Display (Top Left) - Apply Card Style */}
-            <View style={styles.infoCardContainer}>
-                <View style={styles.infoCardContent}>
-                    <Text style={styles.infoText}>Level: {currentLevel}</Text>
-                    <Text style={styles.infoText}>Fuel: {formatNumber(fuel)}</Text>
-                    <Text style={styles.infoText}>Alt: {formatNumber(altitude)}</Text>
-                    <Text style={styles.infoText}>HVel: {formatNumber(hVel)}</Text>
-                    <Text style={styles.infoText}>VVel: {formatNumber(vVel)}</Text>
+            
+            {/* Platform-Specific Info Display - Web section moved to bottom */}
+            {Platform.OS === 'web' ? (
+                // --- WEB LAYOUT (Now Bottom Bar) --- 
+                <View style={styles.webInfoContainer}>
+                    <Text style={styles.webInfoText}>Level: {currentLevel}</Text>
+                    <Text style={styles.webInfoText}>Fuel: {formatNumber(fuel)}</Text>
+                    <Text style={styles.webInfoText}>Alt: {formatNumber(altitude)}</Text>
+                    <Text style={styles.webInfoText}>HVel: {formatNumber(hVel)}</Text>
+                    <Text style={styles.webInfoText}>VVel: {formatNumber(vVel)}</Text>
                 </View>
-                <View style={styles.infoCardShadow} />
-            </View>
+            ) : (
+                // --- MOBILE LAYOUT (Top-Left Card) - Stays same ---
+                <View style={styles.infoCardContainer}>
+                    <View style={styles.infoCardContent}>
+                        <Text style={styles.infoText}>Level: {currentLevel}</Text>
+                        <Text style={styles.infoText}>Fuel: {formatNumber(fuel)}</Text>
+                        <Text style={styles.infoText}>Alt: {formatNumber(altitude)}</Text>
+                        <Text style={styles.infoText}>HVel: {formatNumber(hVel)}</Text>
+                        <Text style={styles.infoText}>VVel: {formatNumber(vVel)}</Text>
+                    </View>
+                    <View style={styles.infoCardShadow} />
+                </View>
+            )}
 
-            {/* Lives Display (Top Right) */}
+            {/* Lives Display (Top Right) - Consistent top position */}
             <View style={styles.livesContainer}>
-                {/* Revert back to using LanderIcon */}
                 {typeof lives === 'number' && lives > 0 && Array.from({ length: lives }).map((_, index) => (
                      <LanderIcon key={index} size={18} />
                 ))}
@@ -250,51 +262,72 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        // Add alignItems: 'center' to allow alignSelf to work on children
-        // but this centers everything... let's try alignSelf on the child first.
     },
-    infoCardContainer: { // New container for positioning info card + shadow
+    // --- Styles for MOBILE Card Layout ---
+    infoCardContainer: {
         position: 'absolute',
-        top: 50, // Adjust as needed
+        top: 50,
         left: 20,
         zIndex: 10,
     },
-    infoCardContent: { // Style for the visible info content card
+    infoCardContent: {
         backgroundColor: neoStyles.mainBg,
         borderWidth: neoStyles.borderWidth,
         borderColor: neoStyles.border,
         borderRadius: neoStyles.borderRadius,
         padding: 10,
-        position: 'relative', // For zIndex context
+        position: 'relative',
         zIndex: 2,
         minWidth: 130,
     },
-    infoCardShadow: { // Shadow element for info card
+    infoCardShadow: {
         position: 'absolute',
         top: neoStyles.shadowOffset,
         left: neoStyles.shadowOffset,
-        right: -neoStyles.shadowOffset, // Extend shadow to the right
-        bottom: -neoStyles.shadowOffset, // Extend shadow down
+        right: -neoStyles.shadowOffset,
+        bottom: -neoStyles.shadowOffset,
         backgroundColor: neoStyles.shadow,
         borderRadius: neoStyles.borderRadius,
         zIndex: 1,
     },
+    // --- Styles for WEB Bottom Bar Layout ---
+    webInfoContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-around', 
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        zIndex: 10,
+    },
+    // --- Text Styles ---
+    infoText: { // Used for Mobile Card
+        color: neoStyles.text,
+        fontSize: 14,
+        marginBottom: 3,
+        fontWeight: '600',
+    },
+    webInfoText: { // Used for Web Bottom Bar
+        color: '#FFFFFF', // White text for dark bar
+        fontSize: 16, // Slightly larger for web bottom bar
+        fontWeight: '600',
+        marginHorizontal: 10, // Add some horizontal spacing
+    },
+    // --- Other Styles --- 
     livesContainer: {
         position: 'absolute',
-        top: 50, // Align with info container
+        top: 50,
         right: 20,
-        flexDirection: 'row', // Arrange icons horizontally
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        flexDirection: 'row',
         paddingVertical: 5,
         paddingHorizontal: 10,
         borderRadius: 5,
-        zIndex: 10, // Ensure lives are above potential card shadow
-    },
-    infoText: {
-        color: neoStyles.text, // Use neo text color
-        fontSize: 14,
-        marginBottom: 3,
-        fontWeight: '600', // Add fontWeight for boldness
+        zIndex: 10,
     },
     statusCardContainer: { // Container for positioning the card + shadow
         position: 'absolute',
