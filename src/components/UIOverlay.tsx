@@ -193,41 +193,30 @@ const UIOverlay: React.FC<UIOverlayProps> = ({
             {/* Controls (Bottom) - Only active if game is playing and not on web */}
             {!isGameOver && Platform.OS !== 'web' && (
                  <View style={styles.controlsContainer} pointerEvents="box-none">
-                    {/* Left Group */}
-                    <View style={styles.buttonGroup}>
-                        <TouchableOpacity
-                            style={[styles.controlButton, styles.leftButton, leftButtonStyle]}
-                            onPressIn={onStartMoveLeft}
-                            onPressOut={onStopMove}
-                        >
-                            <Text style={styles.controlText}>{'<'}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.controlButton, styles.thrustButton, thrustButtonStyle, styles.groupedButton]} // Add spacing style
-                            onPressIn={onStartThrust}
-                            onPressOut={onStopThrust}
-                        >
-                            <Text style={styles.controlText}>^</Text>
-                        </TouchableOpacity>
-                    </View>
+                    {/* Left/Rotation Thruster (Now on the right, stacked) */}
+                     <TouchableOpacity
+                         style={[styles.controlButton, styles.leftButton, leftButtonStyle]}
+                         onPressIn={onStartMoveLeft}
+                         onPressOut={onStopMove}
+                     >
+                         <Text style={styles.controlText}>{'<'}</Text>
+                     </TouchableOpacity>
+                     <TouchableOpacity
+                         style={[styles.controlButton, styles.rightButton, rightButtonStyle]}
+                         onPressIn={onStartMoveRight}
+                         onPressOut={onStopMove}
+                     >
+                         <Text style={styles.controlText}>{'>'}</Text>
+                     </TouchableOpacity>
 
-                     {/* Right Group */}
-                     <View style={styles.buttonGroup}>
-                        <TouchableOpacity
-                            style={[styles.controlButton, styles.thrustButton, thrustButtonStyle, styles.groupedButton]} // Add spacing style
-                            onPressIn={onStartThrust}
-                            onPressOut={onStopThrust}
-                        >
-                            <Text style={styles.controlText}>^</Text>
-                        </TouchableOpacity>
-                         <TouchableOpacity
-                             style={[styles.controlButton, styles.rightButton, rightButtonStyle]}
-                             onPressIn={onStartMoveRight}
-                             onPressOut={onStopMove}
-                         >
-                             <Text style={styles.controlText}>{'>'}</Text>
-                         </TouchableOpacity>
-                    </View>
+                    {/* Main Thruster (Now on the left) */}
+                    <TouchableOpacity
+                        style={[styles.controlButton, styles.thrustButton, thrustButtonStyle]}
+                        onPressIn={onStartThrust}
+                        onPressOut={onStopThrust}
+                    >
+                        <Text style={styles.controlText}>^</Text>
+                    </TouchableOpacity>
                 </View>
             )}
         </View>
@@ -241,7 +230,8 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        // backgroundColor: 'rgba(0, 0, 255, 0.1)', // Debug layout
+        // Ensure it doesn't capture touches unless a child does
+        // pointerEvents: 'box-none', // Already set on the View
     },
     infoContainer: {
         position: 'absolute',
@@ -255,92 +245,100 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 50, // Align with info container
         right: 20,
+        flexDirection: 'row', // Arrange icons horizontally
         backgroundColor: 'rgba(0,0,0,0.5)',
-        paddingVertical: 5, // Adjust padding
+        paddingVertical: 5,
         paddingHorizontal: 10,
         borderRadius: 5,
-        flexDirection: 'row', // Arrange icons horizontally
-        alignItems: 'center',
     },
     infoText: {
-        color: 'white',
+        color: '#fff',
         fontSize: 14,
         marginBottom: 3,
     },
     statusContainer: {
         position: 'absolute',
-        top: SCREEN_HEIGHT * 0.3,
+        top: '40%', // Position higher up
         left: 0,
         right: 0,
         alignItems: 'center',
     },
     statusText: {
-        color: 'white',
-        fontSize: 36,
+        color: 'yellow',
+        fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 20,
+        textAlign: 'center',
+        marginBottom: 15,
         textShadowColor: 'rgba(0, 0, 0, 0.75)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 3,
+        textShadowOffset: {width: -1, height: 1},
+        textShadowRadius: 10
     },
-    actionButton: { // Renamed from restartButton for clarity
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    actionButton: {
+        backgroundColor: 'rgba(100, 100, 255, 0.8)',
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadius: 5,
-        marginTop: 10, // Add margin between buttons if needed
+        borderRadius: 8,
+        marginTop: 10, // Space between message and button, or buttons
     },
-    actionText: { // Renamed from restartText
-        color: 'black',
+    actionText: {
+        color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
     },
     controlsContainer: {
         position: 'absolute',
-        bottom: 40, // Adjust as needed
+        top: 0, // Take full overlay space
         left: 0,
         right: 0,
-        flexDirection: 'row',
-        justifyContent: 'space-between', // Change to space-between
-        paddingHorizontal: 30,
-        // backgroundColor: 'rgba(255, 0, 0, 0.1)', // Debug layout
-    },
-    buttonGroup: { // New style for grouping buttons
-        flexDirection: 'row',
-        alignItems: 'center',
+        bottom: 0,
+        // Remove flex properties, buttons are absolutely positioned
+        // flexDirection: 'row',
+        // justifyContent: 'space-between',
+        // alignItems: 'flex-end',
+        // paddingHorizontal: 20,
+        // paddingBottom: 30, // Remove bottom padding
     },
     controlButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        width: 60,
+        position: 'absolute', // Use absolute positioning
+        width: 60, // Make slightly smaller
         height: 60,
-        borderRadius: 30,
+        borderRadius: 30, // Adjust radius for circular shape (width / 2)
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    groupedButton: { // New style for spacing within a group
-        marginLeft: 15, // Adjust spacing as needed for left group's thrust
-        marginRight: 15, // Adjust spacing as needed for right group's thrust
-    },
-    controlText: {
-        color: 'black',
-        fontSize: 24,
-        fontWeight: 'bold',
-    },
-    buttonActive: {
-        backgroundColor: 'rgba(0, 255, 0, 0.5)',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
     buttonInactive: {
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
-    leftButton: {
-        // Add left button styles if needed
+    buttonActive: {
+        backgroundColor: 'rgba(255, 255, 255, 0.5)', // Brighter when active
     },
-    rightButton: {
-        // Add right button styles if needed
+    controlText: {
+        color: '#fff',
+        fontSize: 30, // Larger symbol
+        fontWeight: 'bold',
     },
     thrustButton: {
-        // Add thrust button styles if needed
+        // Position bottom left
+        left: 30,
+        // top: SCREEN_HEIGHT / 2 - 35, // Center vertically (adjust for button height)
+        bottom: 30, // Position from bottom
     },
+    leftButton: {
+        // Position bottom right, left of the right button
+        right: 30 + 60 + 15, // Base padding + rightButton width (new) + spacing
+        // top: SCREEN_HEIGHT / 2 - 35, // Center vertically
+        bottom: 30, // Position from bottom
+    },
+    rightButton: {
+        // Position bottom right, rightmost button
+        right: 30, // Base padding from edge
+        // top: SCREEN_HEIGHT / 2 - 35, // Center vertically
+        bottom: 30, // Position from bottom
+    },
+    // Remove buttonGroup and groupedButton styles if they exist (they weren't fully shown)
+    // buttonGroup: { ... },
+    // groupedButton: { ... },
 });
 
 export default UIOverlay; 
