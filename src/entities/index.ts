@@ -88,6 +88,14 @@ const createInitialEntities = (
     landingPadBody: Matter.Body,
     levelConfig: LevelConfig // Use the new LevelConfig type
 ): Entities => {
+
+    // --- DEBUG: Log Renderer Imports ---
+    console.log('Inside createInitialEntities:');
+    console.log(`  Lander component: typeof=${typeof Lander}, value=${Lander}`);
+    console.log(`  LandingPad component: typeof=${typeof LandingPad}, value=${LandingPad}`);
+    console.log(`  TerrainSegment component: typeof=${typeof TerrainSegment}, value=${TerrainSegment}`);
+    // --- END DEBUG ---
+
     const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
     // Hardcode constants not yet in level config
@@ -100,12 +108,12 @@ const createInitialEntities = (
         lander: {
             body: landerBody,
             size: [LANDER_WIDTH, LANDER_HEIGHT], // Use hardcoded const
-            renderer: Lander,
+            renderer: Lander, // Restore original renderer
         },
         landingPad: {
             body: landingPadBody,
             size: [levelConfig.landingPad.width, PAD_HEIGHT], // Use levelConfig width, hardcoded height
-            renderer: LandingPad,
+            renderer: LandingPad, // Restore original renderer
         },
         gameState: {
             engine: engine,
@@ -129,11 +137,17 @@ const createInitialEntities = (
             console.warn(`Missing original vertices for terrain body index ${index}`);
             return; // Skip if data is inconsistent
         }
+        
+        // --- DEBUG: Log TerrainSegment before assigning ---
+        if(index === 0) { // Only log for the first terrain segment
+            console.log(`  Assigning TerrainSegment: typeof=${typeof TerrainSegment}, value=${TerrainSegment}`);
+        }
+        // --- END DEBUG ---
 
         initialEntities[`terrain${index + 1}`] = {
             body: body,
             vertices: originalVertices, // Store the original vertices
-            renderer: TerrainSegment,
+            renderer: TerrainSegment, // Restore original renderer
         };
     });
 

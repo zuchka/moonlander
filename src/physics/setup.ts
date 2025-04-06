@@ -217,23 +217,72 @@ export const createTerrainBodies = (terrainVertices?: Vec2D[][], options: IBodyD
         verticesToUse = generateTerrainVertices(screenWidth, screenHeight, landingPadX, landingPadWidth, 0);
     }
 
-    return verticesToUse.map((vertices: Vec2D[]) => {
-        const centre = Matter.Vertices.centre(vertices);
-        const body = Matter.Bodies.fromVertices(
-            centre.x,
-            centre.y,
-            [vertices],
-            {
-                label: 'terrain',
-                isStatic: true,
-                ...options,
-                render: { visible: false, ...(options.render || {}) }
+    // Use map to attempt creation, then filter out failures
+    const bodies = verticesToUse.map((vertices: Vec2D[], index: number) => {
+        // --- Existing debug logs for index 6 --- 
+        if (index === 6) { 
+            const centre = Matter.Vertices.centre(vertices);
+            console.log(`DEBUG: createTerrainBodies - Index 6 - Centre: ${JSON.stringify(centre)}`);
+            try {
+                console.log(`DEBUG: createTerrainBodies - Index 6 - Vertices: ${JSON.stringify(vertices)}`);
+            } catch (e) {
+                console.log('DEBUG: createTerrainBodies - Index 6 - Vertices: Error stringifying vertices');
             }
-        );
+        }
+        // --- 
+
+        // Attempt to create the body
+        let body: Matter.Body | undefined;
+        try {
+            const centre = Matter.Vertices.centre(vertices);
+            // Check if centre calculation was valid and vertices have some area
+            if (centre.x === null || centre.y === null || vertices.length < 3) {
+                 console.warn(`Skipping terrain body creation at index ${index} due to invalid vertices/centre.`);
+                 return undefined; // Explicitly return undefined for filtering
+            }
+
+            body = Matter.Bodies.fromVertices(
+                centre.x,
+                centre.y,
+                [vertices],
+                {
+                    label: 'terrain',
+                    isStatic: true,
+                    ...options,
+                    render: { visible: false, ...(options.render || {}) }
+                }
+            );
+        } catch (error) {
+            console.warn(`Error creating terrain body at index ${index}:`, error);
+            return undefined; // Return undefined on error for filtering
+        }
+        
+
+        // --- Existing debug logs for index 6 --- 
+        if (index === 6) {
+            console.log(`DEBUG: createTerrainBodies - Index 6 - Body created: typeof=${typeof body}, id=${body?.id}, label=${body?.label}`);
+             try {
+                console.log(`DEBUG: createTerrainBodies - Index 6 - Body keys: ${body ? Object.keys(body).join(', ') : 'null/undefined'}`);
+            } catch(e) {
+                console.log('DEBUG: createTerrainBodies - Index 6 - Body: Error getting keys')
+            }
+        }
+        // --- 
+
+        // Check if body creation failed silently (returned undefined)
+        if (!body) {
+             console.warn(`Skipping terrain body at index ${index} because creation failed.`);
+             return undefined;
+        }
 
         if (options.friction !== undefined) {
             body.friction = options.friction;
         }
-        return body;
+        return body; // Return the valid body
     });
+
+    // Filter out any undefined results before returning
+    const validBodies = bodies.filter(b => b !== undefined) as Matter.Body[];
+    console.log(`DEBUG: createTerrainBodies - Created ${validBodies.length} valid bodies out of ${verticesToUse.length} segments.`);
+    return validBodies;
 }; 

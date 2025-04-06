@@ -79,6 +79,7 @@ export default function GameScreen() {
 
         // Load the current level config using the manager
         const levelConfig = getLevelConfig(currentLevel);
+        console.log('DEBUG: After getLevelConfig'); // Log 1
 
         if (!levelConfig) {
             console.error(`Could not load config for level ${currentLevel}`);
@@ -90,6 +91,7 @@ export default function GameScreen() {
         const physics = initializePhysics();
         physicsRef.current = physics;
         const { engine, world } = physics;
+        console.log('DEBUG: After initializePhysics'); // Log 2
 
         // Capture necessary config values for the event listener closure
         const maxLandingSpeed = levelConfig.lander.maxLandingSpeed;
@@ -154,10 +156,12 @@ export default function GameScreen() {
             }
             // If neither, do nothing (e.g., collision between two terrain parts)
         });
+        console.log('DEBUG: After Matter.Events.on'); // Log 3
         // --- End Collision Event Handling ---
 
         // 1. (Physics already initialized above)
         const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+        console.log('DEBUG: After Dimensions.get'); // Log 4
         const landingPadWidth = levelConfig.landingPad.width;
         const landingPadX = screenWidth * levelConfig.landingPad.xPositionFactor;
         const landingPadY = screenHeight - 50 - (GAME_CONSTANTS.PAD_HEIGHT / 2);
@@ -171,9 +175,29 @@ export default function GameScreen() {
             landingPadWidth,
             landingPadTopY
         );
+        console.log('DEBUG: After generateTerrainVertices'); // Log 5
         const landerBody = createLanderBody();
+        console.log('DEBUG: After createLanderBody'); // Log 6
         const terrainBodies = createTerrainBodies(originalTerrainVertices);
+        console.log('DEBUG: After createTerrainBodies'); // Log 7
         const landingPadBody = createLandingPadBody(landingPadX, landingPadY, landingPadWidth);
+        console.log('DEBUG: After createLandingPadBody'); // Log 8
+
+        // --- Log terrainBodies before adding ---
+        console.log(`DEBUG: terrainBodies before add: typeof=${typeof terrainBodies}, isArray=${Array.isArray(terrainBodies)}, length=${terrainBodies?.length}`);
+        try {
+            if (Array.isArray(terrainBodies)) {
+                const bodyInfo = terrainBodies.map((b, i) => `[${i}]: ${b?.label || 'No Label'}(id:${b?.id})`);
+                console.log(`DEBUG: terrainBodies content: [${bodyInfo.join(', ')}]`);
+                // Log properties of the first body if it exists
+                if (terrainBodies.length > 0 && terrainBodies[0]) {
+                    console.log(`DEBUG: First terrain body keys: ${Object.keys(terrainBodies[0]).join(', ')}`);
+                }
+            }
+        } catch (e) {
+            console.log('DEBUG: Error inspecting terrainBodies:', e);
+        }
+        // --- End Log ---
 
         // 3. Add Bodies to the new World
         Matter.World.add(world, [
@@ -181,8 +205,16 @@ export default function GameScreen() {
             ...terrainBodies,
             landingPadBody,
         ]);
+        console.log('DEBUG: After Matter.World.add'); // Log 9
+
+        // DEBUG LOGGING START
+        // console.log('--- Debugging arguments for createInitialEntities ---');
+        // ... other argument logs ...
+        // console.log('--- End Debugging arguments ---');
+        // DEBUG LOGGING END
 
         // 4. Create Initial Entities
+        console.log('DEBUG: BEFORE createInitialEntities call'); // Log 10
         const initialEntities = createInitialEntities(
             engine,
             world,
